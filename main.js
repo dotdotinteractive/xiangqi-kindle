@@ -407,54 +407,56 @@
     function aiMove() {
         if (!engine || gameResult !== '*') return;
         aiThinking = true;
+        var timeLimit = aiTimeLimit();
+        var secs = Math.floor(timeLimit / 1000);
         var st = document.getElementById('status');
-        if (st) st.textContent = 'AI thinking...';
+        if (st) st.textContent = 'AI thinking... (up to ' + secs + 's)';
 
-        try {
-            /* Single search call - engine does iterative deepening internally.
-               Time limit ensures it stops within the allotted time.
-               The engine checks time every 2048 nodes and will abort. */
-            var timeLimit = aiTimeLimit();
-            var tc = engine.getTimeControl();
-            tc.timeSet = 1;
-            tc.time = timeLimit;
-            tc.stopTime = new Date().getTime() + timeLimit;
-            engine.setTimeControl(tc);
+        /* Use setTimeout to let browser repaint the status text
+           before the blocking search call freezes the UI. */
+        setTimeout(function() {
+            try {
+                var tc = engine.getTimeControl();
+                tc.timeSet = 1;
+                tc.time = timeLimit;
+                tc.stopTime = new Date().getTime() + timeLimit;
+                engine.setTimeControl(tc);
 
-            var bestMove = engine.search(aiDepth);
+                var bestMove = engine.search(aiDepth);
 
-            if (bestMove !== 0) {
-                /* Add randomness on lower difficulty levels so AI varies
-                   between games. Hard always plays best move. */
-                var randomChance = (aiDepth >= 7) ? 0 : 0.3;
-                if (Math.random() < randomChance) {
-                    var allMoves = engine.generateLegalMoves();
-                    if (allMoves.length > 1) {
-                        bestMove = allMoves[Math.floor(Math.random() * allMoves.length)].move;
+                if (bestMove !== 0) {
+                    /* Add randomness on lower difficulty levels so AI varies
+                       between games. Hard always plays best move. */
+                    var randomChance = (aiDepth >= 7) ? 0 : 0.3;
+                    if (Math.random() < randomChance) {
+                        var allMoves = engine.generateLegalMoves();
+                        if (allMoves.length > 1) {
+                            bestMove = allMoves[Math.floor(Math.random() * allMoves.length)].move;
+                        }
                     }
-                }
-                lastMoveFrom = engine.getSourceSquare(bestMove);
-                lastMoveTo = engine.getTargetSquare(bestMove);
-                engine.makeMove(bestMove);
-            } else {
-                var moves = engine.generateLegalMoves();
-                if (moves.length > 0) {
-                    bestMove = moves[0].move;
                     lastMoveFrom = engine.getSourceSquare(bestMove);
                     lastMoveTo = engine.getTargetSquare(bestMove);
                     engine.makeMove(bestMove);
+                } else {
+                    var moves = engine.generateLegalMoves();
+                    if (moves.length > 0) {
+                        bestMove = moves[0].move;
+                        lastMoveFrom = engine.getSourceSquare(bestMove);
+                        lastMoveTo = engine.getTargetSquare(bestMove);
+                        engine.makeMove(bestMove);
+                    }
                 }
-            }
 
-            aiThinking = false;
-            drawBoard();
-            updateStatus();
-            updatePgn();
-            checkGameOver();
-        } catch (e) {
-            aiThinking = false;
-            log('aiMove: ' + (e && e.message ? e.message : e));
-        }
+                aiThinking = false;
+                drawBoard();
+                updateStatus();
+                updatePgn();
+                checkGameOver();
+            } catch (e) {
+                aiThinking = false;
+                log('aiMove: ' + (e && e.message ? e.message : e));
+            }
+        }, 50);
     }
 
     function updateStatus() {
