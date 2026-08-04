@@ -405,11 +405,13 @@
     }
 
     /* Node count limit - reliable on Kindle where Date.now() may be broken.
-       This is the primary mechanism for stopping search. */
+       This is the primary mechanism for stopping search.
+       Kindle CPU is very slow (~800MHz), so limits must be conservative.
+       Empirically, ~30K nodes is the practical limit on Kindle. */
     function aiNodeLimit() {
-        if (aiDepth >= 7) return 500000;  /* Hard: 500K nodes */
-        if (aiDepth >= 3) return 100000;  /* Medium: 100K nodes */
-        return 20000;                      /* Easy: 20K nodes */
+        if (aiDepth >= 7) return 30000;   /* Hard: 30K nodes */
+        if (aiDepth >= 3) return 10000;   /* Medium: 10K nodes */
+        return 3000;                       /* Easy: 3K nodes */
     }
 
     function aiMove() {
@@ -424,17 +426,18 @@
            This is the only chance to update UI during synchronous search.
            Also force-stop the engine if time exceeded (backup for Date.now issues). */
         var searchStartTime = new Date().getTime();
+        var lastUpdateNode = 0;
         if (engine.setProgressCallback) {
             engine.setProgressCallback(function(nodes, depth, score) {
-                var now = new Date().getTime();
-                var elapsed = Math.floor((now - searchStartTime) / 1000);
-                /* Force stop if we've exceeded time limit (backup check) */
-                if (now - searchStartTime > timeLimit) {
-                    var tc2 = engine.getTimeControl();
-                    tc2.stopped = 1;
-                    engine.setTimeControl(tc2);
+                /* Force stop if we've exceeded time limit (backup check). */
+                if (new Date().getTime() - searchStartTime > timeLimit) {
+                    if (engine.forceStop) engine.forceStop();
                 }
-                if (st) {
+                /* Only update DOM every 8K nodes to avoid expensive
+                   e-ink repaints during search */
+                if (st && nodes - lastUpdateNode >= 8000) {
+                    lastUpdateNode = nodes;
+                    var elapsed = Math.floor((new Date().getTime() - searchStartTime) / 1000);
                     st.textContent = 'AI: depth ' + depth + '/' + aiDepth +
                                      '  ' + elapsed + 's/' + totalSecs + 's' +
                                      '  ' + Math.floor(nodes / 1000) + 'K nodes';

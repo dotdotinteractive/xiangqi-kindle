@@ -1120,7 +1120,9 @@ var Engine = function Engine() {
         if (elapsed > _searchTimeLimit) timing.stopped = 1;
       }
     }
-    if (onCheckProgress) onCheckProgress(nodes, guiDepth, guiScore);
+    /* Only call progress callback every 4096 nodes to avoid
+       expensive DOM updates on slow Kindle e-ink screen */
+    if (onCheckProgress && (nodes & 4095) == 0) onCheckProgress(nodes, guiDepth, guiScore);
   }
 
   // position repetition detection
@@ -1525,6 +1527,8 @@ var Engine = function Engine() {
     onCheckProgress = cb;
   }, _ref.setMaxNodes = function setMaxNodes(n) {
     _maxNodes = n;
+  }, _ref.forceStop = function forceStop() {
+    timing.stopped = 1;
   }, _ref;
 };
 
