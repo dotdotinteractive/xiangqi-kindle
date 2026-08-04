@@ -1,5 +1,5 @@
 /* Xiangqi - Chinese Chess for Kindle
-   Table-based board rendering, pieces on intersections, ES5 only */
+   Canvas-based board rendering, pieces on intersections, ES5 only */
 
 (function() {
     'use strict';
@@ -69,10 +69,20 @@
         }
     }
 
-    /* Draw the board as a table.
-       Each cell = one intersection point.
-       Grid lines via CSS borders.
-       Palace diagonals drawn as positioned div lines. */
+    /* Canvas-based board rendering.
+       Single <canvas> element - fast on Kindle's old WebKit.
+       All drawing (grid, pieces, dots, rings) done on canvas.
+       Click handling via single canvas onclick. */
+
+    var CELL = 100;       /* distance between intersections */
+    var PAD = 30;         /* margin from canvas edge to first intersection */
+    var PIECE_R = 42;     /* piece circle radius */
+    var CW = 8 * CELL + 2 * PAD;  /* canvas width = 860 */
+    var CH = 9 * CELL + 2 * PAD;  /* canvas height = 960 */
+
+    function ix(col) { return PAD + col * CELL; }
+    function iy(row) { return PAD + row * CELL; }
+
     function drawBoard() {
         if (!engine) return;
         var boardEl = document.getElementById('xiangqiboard');
@@ -94,122 +104,190 @@
             }
         }
 
-        /* All-absolute-positioning board. No CSS layout, no tables.
-           Everything is a div with inline style coordinates.
-
-           Coordinate system: intersection (col,row) is at pixel:
-             x = ORIGIN + col * CELL
-             y = ORIGIN + row * CELL
-           where ORIGIN = CELL/2 (half cell margin inside container). */
-
-        var CELL = 114;           /* distance between intersections */
-        var HALF = 57;            /* CELL / 2 */
-        var PIECE = 95;           /* piece diameter */
-        var POFF = 47.5;          /* PIECE / 2 */
-        var NLINES = 9;           /* vertical lines (cols 0-8) */
-        var HLINES = 10;          /* horizontal lines (rows 0-9) */
-        var BW = 8 * CELL;        /* board width = 912 */
-        var BH = 9 * CELL;        /* board height = 1026 */
-        var CW = BW + CELL;       /* container width = 1026 */
-        var CH = BH + CELL;       /* container height = 1140 */
-        var DIAG = 2 * CELL * 1.4142; /* diagonal length ≈ 322 */
-
-        /* Intersection pixel coordinates */
-        function ix(col) { return HALF + col * CELL; }
-        function iy(row) { return HALF + row * CELL; }
-
-        var h = '';
-
-        /* Set container dimensions */
-        boardEl.style.position = 'relative';
-        boardEl.style.width = CW + 'px';
-        boardEl.style.height = CH + 'px';
-        boardEl.style.margin = '0 auto';
-        boardEl.style.padding = '0';
-
-        /* 1. Board background (tan) */
-        h += '<div style="position:absolute;left:' + HALF + 'px;top:' + HALF + 'px;width:' + BW + 'px;height:' + BH + 'px;background:#f5edd6;"></div>';
-
-        /* 2. Horizontal lines (10 lines, full width, 2px thick) */
-        for (var row = 0; row < HLINES; row++) {
-            h += '<div style="position:absolute;left:' + HALF + 'px;top:' + (iy(row) - 1) + 'px;width:' + BW + 'px;height:2px;background:#000;"></div>';
+        /* Create canvas once, reuse on redraws */
+        var canvas = document.getElementById('xq-canvas');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.id = 'xq-canvas';
+            canvas.width = CW;
+            canvas.height = CH;
+            canvas.style.display = 'block';
+            canvas.style.margin = '0 auto';
+            canvas.style.cursor = 'pointer';
+            canvas.onclick = handleCanvasClick;
+            boardEl.innerHTML = '';
+            boardEl.appendChild(canvas);
         }
 
-        /* 3. Vertical lines (9 lines)
-              Outer (col 0, col 8): full height
-              Inner (col 1-7): break at river (row 4 to row 5) */
-        for (var col = 0; col < NLINES; col++) {
-            var lx = ix(col) - 1;
-            if (col === 0 || col === NLINES - 1) {
-                h += '<div style="position:absolute;left:' + lx + 'px;top:' + HALF + 'px;width:2px;height:' + BH + 'px;background:#000;"></div>';
+        var ctx = canvas.getContext('2d');
+        if (!ctx) {
+            log('Canvas 2d context not available');
+            return;
+        }
+
+        /* Clear */
+        ctx.clearRect(0, 0, CW, CH);
+
+        /* 1. Board background */
+        ctx.fillStyle = '#f5edd6';
+        ctx.fillRect(PAD, PAD, 8 * CELL, 9 * CELL);
+
+        /* 2. Grid lines */
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'square';
+
+        /* Horizontal lines (10 lines, full width) */
+        for (var row = 0; row < 10; row++) {
+            ctx.beginPath();
+            ctx.moveTo(ix(0), iy(row));
+            ctx.lineTo(ix(8), iy(row));
+            ctx.stroke();
+        }
+
+        /* Vertical lines (9 lines; inner 7 break at river) */
+        for (var col = 0; col < 9; col++) {
+            if (col === 0 || col === 8) {
+                ctx.beginPath();
+                ctx.moveTo(ix(col), iy(0));
+                ctx.lineTo(ix(col), iy(9));
+                ctx.stroke();
             } else {
-                var topH = 4 * CELL;
-                var botY = iy(5);
-                var botH = 4 * CELL;
-                h += '<div style="position:absolute;left:' + lx + 'px;top:' + HALF + 'px;width:2px;height:' + topH + 'px;background:#000;"></div>';
-                h += '<div style="position:absolute;left:' + lx + 'px;top:' + botY + 'px;width:2px;height:' + botH + 'px;background:#000;"></div>';
+                ctx.beginPath();
+                ctx.moveTo(ix(col), iy(0));
+                ctx.lineTo(ix(col), iy(4));
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(ix(col), iy(5));
+                ctx.lineTo(ix(col), iy(9));
+                ctx.stroke();
             }
         }
 
-        /* 4. Palace diagonals (X in top and bottom 3x3 palace)
-              Top: cols 3-5, rows 0-2. Bottom: cols 3-5, rows 7-9.
-              Each diagonal: 2 cells = 228px, length = 228*sqrt(2) ≈ 322px
-              Rotated 45deg from intersection point. */
-        function diag(x, y, deg) {
-            return '<div style="position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + DIAG + 'px;height:2px;background:#000;-webkit-transform-origin:0 0;transform-origin:0 0;-webkit-transform:rotate(' + deg + 'deg);transform:rotate(' + deg + 'deg);"></div>';
-        }
-        /* Top palace: (3,0)->(5,2) = 45deg, (5,0)->(3,2) = -45deg */
-        h += diag(ix(3), iy(0), 45);
-        h += diag(ix(5), iy(0), -45);
-        /* Bottom palace: (3,7)->(5,9) = 45deg, (5,7)->(3,9) = -45deg */
-        h += diag(ix(3), iy(7), 45);
-        h += diag(ix(5), iy(7), -45);
+        /* 3. Palace diagonals */
+        ctx.beginPath();
+        ctx.moveTo(ix(3), iy(0)); ctx.lineTo(ix(5), iy(2));
+        ctx.moveTo(ix(5), iy(0)); ctx.lineTo(ix(3), iy(2));
+        ctx.moveTo(ix(3), iy(7)); ctx.lineTo(ix(5), iy(9));
+        ctx.moveTo(ix(5), iy(7)); ctx.lineTo(ix(3), iy(9));
+        ctx.stroke();
 
-        /* 5. River text (between row 4 and row 5, centered in each half) */
-        var riverY = iy(4) + HALF; /* midpoint of river */
-        h += '<div style="position:absolute;left:' + (ix(2) - 50) + 'px;top:' + (riverY - 14) + 'px;width:100px;text-align:center;font-size:27px;color:#888;pointer-events:none;">楚 河</div>';
-        h += '<div style="position:absolute;left:' + (ix(6) - 50) + 'px;top:' + (riverY - 14) + 'px;width:100px;text-align:center;font-size:27px;color:#888;pointer-events:none;">漢 界</div>';
+        /* 4. River text */
+        ctx.fillStyle = '#888';
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        var riverY = (iy(4) + iy(5)) / 2;
+        ctx.fillText('\u695A \u6CB3', ix(2), riverY);
+        ctx.fillText('\u6F22 \u754C', ix(6), riverY);
 
-        /* 6. Pieces, dots, rings, markers, and click areas */
+        /* 5. Pieces, dots, rings, markers */
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
             for (var file = 0; file < COLS; file++) {
                 var actualRow = flip ? (ROWS - 1 - displayRow) : displayRow;
                 var actualFile = flip ? (COLS - 1 - file) : file;
                 var sq = squareFromCoord(actualRow, actualFile);
                 var piece = engine.getPiece(sq);
-
                 var cx = ix(file);
                 var cy = iy(displayRow);
 
-                /* Click area (invisible, centered on intersection) */
-                h += '<div style="position:absolute;left:' + (cx - HALF) + 'px;top:' + (cy - HALF) + 'px;width:' + CELL + 'px;height:' + CELL + 'px;cursor:pointer;" onclick="tapSquare(' + sq + ')"></div>';
-
                 if (piece > 0) {
                     var isRedPiece = isRed(piece);
-                    /* Red pieces shifted down 5px from intersection center */
-                    var pTop = cy - POFF + (isRedPiece ? 5 : 0);
-                    var pLeft = cx - POFF;
-                    var bg = isRedPiece ? '#fff' : '#000';
-                    var clr = isRedPiece ? '#c00' : '#fff';
-                    var bdr = isRedPiece ? '#c00' : '#000';
-                    var selBg = (sq === selectedSquare) ? 'background:#ccc;' : 'background:' + bg + ';';
-                    h += '<div style="position:absolute;left:' + pLeft + 'px;top:' + pTop + 'px;width:' + PIECE + 'px;height:' + PIECE + 'px;line-height:85px;text-align:center;font-size:53px;font-weight:bold;border-radius:50%;border:3px solid ' + bdr + ';box-sizing:border-box;' + selBg + 'color:' + clr + ';z-index:2;">' + pieceChar(piece) + '</div>';
 
+                    /* Piece circle */
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, PIECE_R, 0, 2 * Math.PI);
+                    ctx.fillStyle = (sq === selectedSquare) ? '#ccc' : (isRedPiece ? '#fff' : '#000');
+                    ctx.fill();
+                    ctx.strokeStyle = isRedPiece ? '#c00' : '#000';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+
+                    /* Inner ring (decorative) */
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, PIECE_R - 5, 0, 2 * Math.PI);
+                    ctx.strokeStyle = isRedPiece ? '#c00' : '#000';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    /* Piece text */
+                    ctx.fillStyle = isRedPiece ? '#c00' : '#fff';
+                    ctx.font = 'bold 32px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(pieceChar(piece), cx, cy);
+
+                    /* Capture ring on enemy piece */
                     if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
-                        /* Capture ring */
-                        h += '<div style="position:absolute;left:' + (cx - 51) + 'px;top:' + (cy - 51) + 'px;width:102px;height:102px;border-radius:50%;border:4px solid #c00;z-index:1;"></div>';
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, PIECE_R + 4, 0, 2 * Math.PI);
+                        ctx.strokeStyle = '#c00';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
                     }
                 } else if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
                     /* Legal move dot */
-                    h += '<div style="position:absolute;left:' + (cx - 13.5) + 'px;top:' + (cy - 13.5) + 'px;width:27px;height:27px;border-radius:50%;background:#555;opacity:0.5;z-index:1;"></div>';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#555';
+                    ctx.fill();
                 } else if (sq === lastMoveFrom || sq === lastMoveTo) {
                     /* Last move marker */
-                    h += '<div style="position:absolute;left:' + (cx - 13.5) + 'px;top:' + (cy - 13.5) + 'px;width:27px;height:27px;border-radius:50%;background:#999;opacity:0.3;z-index:1;"></div>';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#999';
+                    ctx.fill();
                 }
             }
         }
+    }
 
-        boardEl.innerHTML = h;
+    /* Single click handler for the entire canvas.
+       Calculates which intersection was clicked and calls tapSquare. */
+    function handleCanvasClick(e) {
+        if (!engine || aiThinking || gameResult !== '*') return;
+
+        /* Get click coordinates relative to canvas.
+           Use offsetLeft/offsetTop for old WebKit compatibility. */
+        var canvas = document.getElementById('xq-canvas');
+        if (!canvas) return;
+
+        var x, y;
+        if (e.offsetX !== undefined) {
+            x = e.offsetX;
+            y = e.offsetY;
+        } else if (e.layerX !== undefined) {
+            x = e.layerX - canvas.offsetLeft;
+            y = e.layerY - canvas.offsetTop;
+        } else {
+            /* Fallback: calculate from page coordinates */
+            var obj = canvas;
+            var offX = 0, offY = 0;
+            while (obj) {
+                offX += obj.offsetLeft;
+                offY += obj.offsetTop;
+                obj = obj.offsetParent;
+            }
+            x = e.pageX - offX;
+            y = e.pageY - offY;
+        }
+
+        /* Find nearest intersection */
+        var col = Math.round((x - PAD) / CELL);
+        var row = Math.round((y - PAD) / CELL);
+
+        /* Clamp to board bounds */
+        if (col < 0) col = 0;
+        if (col > 8) col = 8;
+        if (row < 0) row = 0;
+        if (row > 9) row = 9;
+
+        /* Convert display coordinates to actual square (account for flip) */
+        var actualRow = flip ? (ROWS - 1 - row) : row;
+        var actualFile = flip ? (COLS - 1 - col) : col;
+        var sq = squareFromCoord(actualRow, actualFile);
+
+        tapSquare(sq);
     }
 
     window.tapSquare = function(sq) {

@@ -103,7 +103,14 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 }
 
 /* ===== Xiangqi Board ===== */
-/* Board is drawn entirely in JS with absolute positioning. No CSS needed. */
+/* Board is drawn on a single <canvas> element. No CSS layout needed. */
+#xiangqiboard {
+    text-align: center;
+}
+#xq-canvas {
+    display: block;
+    margin: 0 auto;
+}
 
 /* ===== Game Menu (centered popup overlay) ===== */
 #game-menu {
