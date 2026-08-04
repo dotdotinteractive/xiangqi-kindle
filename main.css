@@ -80,7 +80,7 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 
 /* ===== Board Screen ===== */
 #status-bar {
-    text-align: center;
+    text-align: left;
     padding: 2px 8px;
     font-size: 0.9em;
     font-weight: bold;

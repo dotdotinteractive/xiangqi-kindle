@@ -248,12 +248,20 @@
                     ctx.lineWidth = 1;
                     ctx.stroke();
 
-                    /* Piece text */
+                    /* Piece text - black pieces rotated 180° in two-player mode */
                     ctx.fillStyle = isRedPiece ? '#c00' : '#fff';
                     ctx.font = 'bold ' + Math.floor(CELL * 0.48) + 'px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(pieceChar(piece), cx, cy);
+                    if (!isRedPiece && gameMode === 'two-player') {
+                        ctx.save();
+                        ctx.translate(cx, cy);
+                        ctx.rotate(Math.PI);
+                        ctx.fillText(pieceChar(piece), 0, 0);
+                        ctx.restore();
+                    } else {
+                        ctx.fillText(pieceChar(piece), cx, cy);
+                    }
 
                     /* Capture ring on enemy piece */
                     if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
