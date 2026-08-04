@@ -399,8 +399,7 @@
 
     /* AI time limit based on difficulty (ms) */
     function aiTimeLimit() {
-        if (aiDepth >= 7) return 20000;  /* Expert: 20s */
-        if (aiDepth >= 5) return 8000;   /* Hard: 8s */
+        if (aiDepth >= 7) return 20000;  /* Hard: 20s */
         if (aiDepth >= 3) return 4000;   /* Medium: 4s */
         return 2000;                      /* Easy: 2s */
     }
@@ -411,53 +410,23 @@
         var st = document.getElementById('status');
         if (st) st.textContent = 'AI thinking...';
 
-        /* Iterative deepening: search depth 1, 2, 3, ... up to aiDepth.
-           After each depth completes, update status bar with progress.
-           This lets the player see the AI is working.
-           The engine's transposition table persists between calls,
-           so deeper searches benefit from shallower ones. */
-        var timeLimit = aiTimeLimit();
-        var startTime = new Date().getTime();
-        var bestMove = 0;
-
-        function searchDepth(d) {
-            var remaining = timeLimit - (new Date().getTime() - startTime);
-            if (remaining <= 0) return true; /* time's up */
-
+        try {
+            /* Single search call - engine does iterative deepening internally.
+               Time limit ensures it stops within the allotted time.
+               The engine checks time every 2048 nodes and will abort. */
+            var timeLimit = aiTimeLimit();
             var tc = engine.getTimeControl();
             tc.timeSet = 1;
-            tc.time = remaining;
-            tc.stopTime = new Date().getTime() + remaining;
+            tc.time = timeLimit;
+            tc.stopTime = new Date().getTime() + timeLimit;
             engine.setTimeControl(tc);
 
-            var mv = engine.search(d);
-
-            /* Update status with progress */
-            var elapsed = new Date().getTime() - startTime;
-            var secs = (elapsed / 1000).toFixed(1);
-            var depthLabel = 'depth ' + d + '/' + aiDepth;
-            var timeLabel = secs + 's';
-            if (st) st.textContent = 'AI: ' + depthLabel + ' ' + timeLabel;
-
-            if (mv !== 0) bestMove = mv;
-
-            /* Check if time is up or found forced mate */
-            var now = new Date().getTime();
-            if (now - startTime >= timeLimit) return true;
-            return false;
-        }
-
-        try {
-            var timeUp = false;
-            for (var d = 1; d <= aiDepth; d++) {
-                timeUp = searchDepth(d);
-                if (timeUp) break;
-            }
+            var bestMove = engine.search(aiDepth);
 
             if (bestMove !== 0) {
                 /* Add randomness on lower difficulty levels so AI varies
-                   between games. Hard+ always plays best move. */
-                var randomChance = (aiDepth >= 5) ? 0 : 0.3;
+                   between games. Hard always plays best move. */
+                var randomChance = (aiDepth >= 7) ? 0 : 0.3;
                 if (Math.random() < randomChance) {
                     var allMoves = engine.generateLegalMoves();
                     if (allMoves.length > 1) {
@@ -626,7 +595,7 @@
 
     function setDifficulty(depth) {
         aiDepth = depth;
-        var btns = ['diff-easy-btn', 'diff-medium-btn', 'diff-hard-btn', 'diff-expert-btn'];
+        var btns = ['diff-easy-btn', 'diff-medium-btn', 'diff-hard-btn'];
         for (var i = 0; i < btns.length; i++) {
             var btn = document.getElementById(btns[i]);
             if (btn) {
@@ -660,10 +629,7 @@
             if (diffMedium) diffMedium.onclick = function() { setDifficulty(3); };
 
             var diffHard = document.getElementById('diff-hard-btn');
-            if (diffHard) diffHard.onclick = function() { setDifficulty(5); };
-
-            var diffExpert = document.getElementById('diff-expert-btn');
-            if (diffExpert) diffExpert.onclick = function() { setDifficulty(7); };
+            if (diffHard) diffHard.onclick = function() { setDifficulty(7); };
 
             var btnNew = document.getElementById('btn-new');
             if (btnNew) btnNew.onclick = function() { toggleMenu(); newGame(); };
