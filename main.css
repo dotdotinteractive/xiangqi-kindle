@@ -125,9 +125,19 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     height: 120px;
     padding: 0;
     position: relative;
-    cursor: pointer;
     border-right: 2px solid #000;
     border-bottom: 2px solid #000;
+}
+
+/* Click hit area: centered on intersection (top-left corner of cell) */
+.xq-hit {
+    position: absolute;
+    top: -60px;
+    left: -60px;
+    width: 120px;
+    height: 120px;
+    cursor: pointer;
+    z-index: 10;
 }
 
 /* First column: draw left border (1st vertical line = left edge) */

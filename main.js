@@ -133,7 +133,10 @@
                     content += '<span class="xq-last-marker"></span>';
                 }
 
-                html += '<td class="' + classes + '" onclick="tapSquare(' + sq + ')">' + content + '</td>';
+                /* Click hit area: 120x120 square centered on intersection (top-left corner) */
+                content = '<span class="xq-hit" onclick="tapSquare(' + sq + ')"></span>' + content;
+
+                html += '<td class="' + classes + '">' + content + '</td>';
             }
             html += '</tr>';
         }
