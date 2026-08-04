@@ -1,5 +1,5 @@
 {
 	"items": [
-		{"name": "Xiangqi - Install & Launch", "priority": 1, "action": "/mnt/us/documents/shortcut_xiangqi.sh"}
+		{"name": "Install & Launch", "priority": 1, "action": "sh bin/launch.sh"}
 	]
 }
