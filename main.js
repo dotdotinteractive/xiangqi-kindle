@@ -1,5 +1,5 @@
 /* Xiangqi - Chinese Chess for Kindle
-   Board: pieces on intersections, built on Wukong engine */
+   Table-based board rendering, pieces on intersections, ES5 only */
 
 (function() {
     'use strict';
@@ -11,13 +11,8 @@
 
     var RED = 0;
     var BLACK = 1;
-    var COLS = 9;   /* 9 files (intersections) */
-    var ROWS = 10;  /* 10 ranks (intersections) */
-
-    /* Cell size in px - distance between adjacent intersections */
-    var CELL = 38;
-    /* Padding around board for edge pieces */
-    var PAD = 22;
+    var COLS = 9;
+    var ROWS = 10;
 
     var engine = null;
     var gameMode = 'ai-red';
@@ -74,113 +69,14 @@
         }
     }
 
-    /* Generate the board background as an SVG data URL.
-       Xiangqi board: 9x10 intersections, lines connect them.
-       River in the middle (between row 4 and row 5).
-       Palace diagonals in 3x3 areas at top (cols 3-5, rows 0-2) and bottom (cols 3-5, rows 7-9).
-       Cannon and pawn position markers (small cross marks). */
-    function boardBackgroundSvg() {
-        var w = (COLS - 1) * CELL + PAD * 2;
-        var h = (ROWS - 1) * CELL + PAD * 2;
-        var x0 = PAD;
-        var y0 = PAD;
-        var lines = '';
-
-        /* Outer border (thick) */
-        lines += '<rect x="' + (x0 - 1) + '" y="' + (y0 - 1) +
-                '" width="' + ((COLS - 1) * CELL + 2) + '" height="' + ((ROWS - 1) * CELL + 2) +
-                '" fill="#f5edd6" stroke="#000" stroke-width="2"/>';
-
-        /* Horizontal lines (10 lines) */
-        for (var r = 0; r < ROWS; r++) {
-            var y = y0 + r * CELL;
-            lines += '<line x1="' + x0 + '" y1="' + y + '" x2="' + (x0 + (COLS - 1) * CELL) + '" y2="' + y + '" stroke="#000" stroke-width="1"/>';
-        }
-
-        /* Vertical lines (9 lines, but middle section broken by river) */
-        for (var c = 0; c < COLS; c++) {
-            var x = x0 + c * CELL;
-            if (c === 0 || c === COLS - 1) {
-                /* Edge columns go full height */
-                lines += '<line x1="' + x + '" y1="' + y0 + '" x2="' + x + '" y2="' + (y0 + (ROWS - 1) * CELL) + '" stroke="#000" stroke-width="1"/>';
-            } else {
-                /* Inner columns broken by river: top half (rows 0-4) and bottom half (rows 5-9) */
-                lines += '<line x1="' + x + '" y1="' + y0 + '" x2="' + x + '" y2="' + (y0 + 4 * CELL) + '" stroke="#000" stroke-width="1"/>';
-                lines += '<line x1="' + x + '" y1="' + (y0 + 5 * CELL) + '" x2="' + x + '" y2="' + (y0 + 9 * CELL) + '" stroke="#000" stroke-width="1"/>';
-            }
-        }
-
-        /* Palace diagonals - top palace (rows 0-2, cols 3-5) */
-        lines += '<line x1="' + (x0 + 3 * CELL) + '" y1="' + y0 + '" x2="' + (x0 + 5 * CELL) + '" y2="' + (y0 + 2 * CELL) + '" stroke="#000" stroke-width="1"/>';
-        lines += '<line x1="' + (x0 + 5 * CELL) + '" y1="' + y0 + '" x2="' + (x0 + 3 * CELL) + '" y2="' + (y0 + 2 * CELL) + '" stroke="#000" stroke-width="1"/>';
-
-        /* Palace diagonals - bottom palace (rows 7-9, cols 3-5) */
-        lines += '<line x1="' + (x0 + 3 * CELL) + '" y1="' + (y0 + 7 * CELL) + '" x2="' + (x0 + 5 * CELL) + '" y2="' + (y0 + 9 * CELL) + '" stroke="#000" stroke-width="1"/>';
-        lines += '<line x1="' + (x0 + 5 * CELL) + '" y1="' + (y0 + 7 * CELL) + '" x2="' + (x0 + 3 * CELL) + '" y2="' + (y0 + 9 * CELL) + '" stroke="#000" stroke-width="1"/>';
-
-        /* River text: 楚河 漢界 */
-        var riverY = y0 + 4 * CELL + CELL / 2 + 5;
-        lines += '<text x="' + (x0 + 1.5 * CELL) + '" y="' + riverY + '" font-size="14" fill="#888" text-anchor="middle">楚 河</text>';
-        lines += '<text x="' + (x0 + 6.5 * CELL) + '" y="' + riverY + '" font-size="14" fill="#888" text-anchor="middle">漢 界</text>';
-
-        /* Cannon and pawn position markers (small corner marks) */
-        /* Cannon positions: (2,1), (2,7), (7,1), (7,7) - row, col in display coords */
-        /* Pawn positions: (3,0), (3,2), (3,4), (3,6), (3,8), (6,0), (6,2), (6,4), (6,6), (6,8) */
-        var markers = [
-            [2, 1], [2, 7], [7, 1], [7, 7],  /* cannons */
-            [3, 0], [3, 2], [3, 4], [3, 6], [3, 8],  /* black pawns */
-            [6, 0], [6, 2], [6, 4], [6, 6], [6, 8]   /* red pawns */
-        ];
-        for (var m = 0; m < markers.length; m++) {
-            var mr = markers[m][0];
-            var mc = markers[m][1];
-            var mx = x0 + mc * CELL;
-            var my = y0 + mr * CELL;
-            lines += drawMarker(mx, my, mc);
-        }
-
-        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' + lines + '</svg>';
-        return 'data:image/svg+xml,' + encodeURIComponent(svg);
-    }
-
-    /* Draw position marker (small L-shaped corners around intersection) */
-    function drawMarker(x, y, col) {
-        var s = 4;   /* marker size */
-        var g = 3;   /* gap from center */
-        var parts = '';
-
-        /* Left markers (if not on left edge) */
-        if (col > 0) {
-            /* Upper-left */
-            parts += '<line x1="' + (x - g) + '" y1="' + (y - g - s) + '" x2="' + (x - g) + '" y2="' + (y - g) + '" stroke="#000" stroke-width="1"/>';
-            parts += '<line x1="' + (x - g - s) + '" y1="' + (y - g) + '" x2="' + (x - g) + '" y2="' + (y - g) + '" stroke="#000" stroke-width="1"/>';
-            /* Lower-left */
-            parts += '<line x1="' + (x - g) + '" y1="' + (y + g) + '" x2="' + (x - g) + '" y2="' + (y + g + s) + '" stroke="#000" stroke-width="1"/>';
-            parts += '<line x1="' + (x - g - s) + '" y1="' + (y + g) + '" x2="' + (x - g) + '" y2="' + (y + g) + '" stroke="#000" stroke-width="1"/>';
-        }
-        /* Right markers (if not on right edge) */
-        if (col < COLS - 1) {
-            /* Upper-right */
-            parts += '<line x1="' + (x + g) + '" y1="' + (y - g - s) + '" x2="' + (x + g) + '" y2="' + (y - g) + '" stroke="#000" stroke-width="1"/>';
-            parts += '<line x1="' + (x + g) + '" y1="' + (y - g) + '" x2="' + (x + g + s) + '" y2="' + (y - g) + '" stroke="#000" stroke-width="1"/>';
-            /* Lower-right */
-            parts += '<line x1="' + (x + g) + '" y1="' + (y + g) + '" x2="' + (x + g) + '" y2="' + (y + g + s) + '" stroke="#000" stroke-width="1"/>';
-            parts += '<line x1="' + (x + g) + '" y1="' + (y + g) + '" x2="' + (x + g + s) + '" y2="' + (y + g) + '" stroke="#000" stroke-width="1"/>';
-        }
-        return parts;
-    }
-
-    /* Draw the board: background SVG + absolutely positioned pieces/intersections */
+    /* Draw the board as a table.
+       Each cell = one intersection point.
+       Grid lines via CSS borders.
+       Palace diagonals drawn as positioned div lines. */
     function drawBoard() {
         if (!engine) return;
         var boardEl = document.getElementById('xiangqiboard');
         if (!boardEl) return;
-
-        var boardW = (COLS - 1) * CELL + PAD * 2;
-        var boardH = (ROWS - 1) * CELL + PAD * 2;
-        boardEl.style.width = boardW + 'px';
-        boardEl.style.height = boardH + 'px';
-        boardEl.style.position = 'relative';
 
         /* Pre-compute legal move targets */
         var legalTargets = {};
@@ -198,52 +94,54 @@
             }
         }
 
-        /* Build background SVG */
-        var bgUrl = boardBackgroundSvg();
-        var html = '<div style="position:absolute;top:0;left:0;width:' + boardW + 'px;height:' + boardH +
-                   'px;background:url(' + bgUrl + ') no-repeat;z-index:0;"></div>';
+        var html = '<table cellspacing="0" cellpadding="0"><tbody>';
 
-        /* Place intersection points with pieces */
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
+            html += '<tr>';
             for (var file = 0; file < COLS; file++) {
                 var actualRow = flip ? (ROWS - 1 - displayRow) : displayRow;
                 var actualFile = flip ? (COLS - 1 - file) : file;
                 var sq = squareFromCoord(actualRow, actualFile);
                 var piece = engine.getPiece(sq);
 
-                var px = PAD + file * CELL;
-                var py = PAD + displayRow * CELL;
+                /* Cell classes for border drawing */
+                var classes = 'col' + file + ' row' + displayRow;
 
-                var isLegal = (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]);
-                var isSelected = (sq === selectedSquare);
-                var isLastFrom = (sq === lastMoveFrom);
-                var isLastTo = (sq === lastMoveTo);
-
+                /* Cell content */
                 var content = '';
-                var pointClass = 'xq-point';
 
+                /* River text in middle rows */
+                if (displayRow === 4 && file === 1) {
+                    content += '<span class="river-text">楚 河</span>';
+                } else if (displayRow === 4 && file === 6) {
+                    content += '<span class="river-text">漢 界</span>';
+                }
+
+                }
+
+                /* Piece */
                 if (piece > 0) {
                     var pieceClass = isRed(piece) ? 'xq-piece-red' : 'xq-piece-black';
                     var pieceExtra = '';
-                    if (isSelected) pieceExtra += ' xq-selected';
-                    if (isLastFrom || isLastTo) pieceExtra += ' xq-last-to';
-                    content = '<span class="xq-piece ' + pieceClass + pieceExtra + '">' + pieceChar(piece) + '</span>';
-                    if (isLegal) {
-                        /* Ring around capturable piece */
-                        content = '<span class="xq-legal-capture"></span>' + content;
+                    if (sq === selectedSquare) pieceExtra += ' xq-selected';
+                    if (sq === lastMoveFrom || sq === lastMoveTo) pieceExtra += ' xq-last';
+                    content += '<span class="xq-piece ' + pieceClass + pieceExtra + '">' + pieceChar(piece) + '</span>';
+                    /* If this is a legal capture target, add ring */
+                    if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
+                        content += '<span class="xq-ring"></span>';
                     }
-                } else if (isLegal) {
-                    /* Empty intersection with legal move dot */
-                    content = '<span class="xq-legal-dot"></span>';
-                } else if (isLastFrom || isLastTo) {
-                    content = '<span class="xq-legal-dot" style="background:#999;opacity:0.3;"></span>';
+                } else if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
+                    /* Legal move dot on empty intersection */
+                    content += '<span class="xq-dot"></span>';
+                } else if (sq === lastMoveFrom || sq === lastMoveTo) {
+                    content += '<span class="xq-dot" style="background:#999;opacity:0.3;"></span>';
                 }
 
-                html += '<div class="' + pointClass + '" style="left:' + px + 'px;top:' + py +
-                        'px;" onclick="tapSquare(' + sq + ')">' + content + '</div>';
+                html += '<td class="' + classes + '" onclick="tapSquare(' + sq + ')">' + content + '</td>';
             }
+            html += '</tr>';
         }
-
+        html += '</tbody></table>';
         boardEl.innerHTML = html;
     }
 

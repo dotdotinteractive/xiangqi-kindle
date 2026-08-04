@@ -1,5 +1,5 @@
 /* Xiangqi - Chinese Chess for Kindle
-   Board: pieces on intersections, e-ink optimized */
+   Board: pieces on intersections, table-based rendering, e-ink optimized */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -98,52 +98,118 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 
 #board-area {
     text-align: center;
-    padding: 4px 0;
+    padding: 2px 0;
 }
 
-/* ===== Xiangqi Board ===== */
-/* Board is drawn as a grid of intersection points.
-   9 columns x 10 rows of intersections.
-   Pieces sit ON the intersections. */
+/* ===== Xiangqi Board (table-based) ===== */
+/* The board is a table of 9 columns x 10 rows.
+   Each cell represents one intersection point.
+   Grid lines are drawn with CSS borders.
+   Pieces are centered in each cell. */
 
 #xiangqiboard {
     display: inline-block;
-    position: relative;
-    /* Board dimensions: 8 gaps wide x 9 gaps tall, plus padding for edge pieces */
-    /* With CELL=38px: 8*38=304 wide, 9*38=342 tall, +padding 38 each side = 380x418 */
 }
 
-/* Board background with grid lines drawn via CSS */
-.xq-board-bg {
-    position: absolute;
-    top: 0; left: 0;
-    z-index: 0;
+#xiangqiboard table {
+    border-collapse: collapse;
+    background: #f5edd6;
+    border: 2px solid #000;
 }
 
-/* Each intersection point */
-.xq-point {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    margin-left: -20px;
-    margin-top: -20px;
+#xiangqiboard td {
+    width: 56px;
+    height: 56px;
     text-align: center;
     vertical-align: middle;
+    position: relative;
     cursor: pointer;
-    z-index: 2;
+    font-size: 28px;
+    font-weight: bold;
+    /* Default: draw right and bottom borders = grid lines */
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
 }
 
-/* Piece on intersection */
+/* First column: also draw left border */
+#xiangqiboard td.col0 {
+    border-left: 2px solid #000;
+}
+
+/* First row: also draw top border */
+#xiangqiboard td.row0 {
+    border-top: 2px solid #000;
+}
+
+/* Last column: thicker right border */
+#xiangqiboard td.col8 {
+    border-right: 2px solid #000;
+}
+
+/* Last row: thicker bottom border */
+#xiangqiboard td.row9 {
+    border-bottom: 2px solid #000;
+}
+
+/* River rows (row 4 and row 5): no vertical lines between them */
+/* Row 4: no bottom border (river gap below) */
+#xiangqiboard td.row4 {
+    border-bottom: none;
+}
+
+/* Inner columns in river rows: no vertical border on the river side */
+/* For row 4: remove bottom border (already done) */
+/* For row 5: remove top border (which is the bottom of row 4 = river) */
+#xiangqiboard td.row5 {
+    border-top: none;
+}
+
+/* Inner columns (1-7) in river rows: no vertical border between row4 and row5 */
+/* We handle this by making row4 cells have no bottom border (done above) */
+/* and row5 inner cells have no top border */
+#xiangqiboard td.row5.col1,
+#xiangqiboard td.row5.col2,
+#xiangqiboard td.row5.col3,
+#xiangqiboard td.row5.col4,
+#xiangqiboard td.row5.col5,
+#xiangqiboard td.row5.col6,
+#xiangqiboard td.row5.col7 {
+    border-top: none;
+}
+
+/* River text */
+.river-text {
+    font-size: 14px;
+    color: #888;
+    font-weight: normal;
+    letter-spacing: 4px;
+}
+
+/* Palace diagonal markers - using text characters as a simple approach */
+.palace-diag {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    font-size: 56px;
+    line-height: 56px;
+    color: #000;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Piece rendering */
 .xq-piece {
     display: inline-block;
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
+    width: 48px;
+    height: 48px;
+    line-height: 48px;
     text-align: center;
-    font-size: 22px;
+    font-size: 28px;
     font-weight: bold;
     border-radius: 50%;
     border: 2px solid #000;
+    position: relative;
+    z-index: 2;
 }
 
 /* Red pieces: white background, red text, red border */
@@ -160,44 +226,39 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     background: #000;
 }
 
-/* Empty intersection dot for legal moves */
-.xq-legal-dot {
+/* Selected piece */
+.xq-selected {
+    background: #ccc !important;
+}
+
+/* Legal move dot */
+.xq-dot {
     display: inline-block;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: #555;
     opacity: 0.5;
 }
 
-/* Legal capture: ring around piece */
-.xq-legal-capture {
+/* Legal capture ring */
+.xq-ring {
     display: inline-block;
-    width: 38px;
-    height: 38px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     border: 3px solid #c00;
-}
-
-/* Selected piece: highlight */
-.xq-selected {
-    background: #ccc;
-}
-
-/* Last move highlight: small marker */
-.xq-last-from, .xq-last-to {
-    background: #ddd;
-    border-radius: 50%;
-}
-
-/* River text */
-.xq-river-text {
     position: absolute;
-    font-size: 16px;
-    color: #888;
-    font-weight: normal;
+    top: 50%;
+    left: 50%;
+    margin-left: -25px;
+    margin-top: -25px;
     z-index: 1;
-    text-align: center;
+}
+
+/* Last move highlight */
+.xq-last {
+    background: #e0d8b8;
 }
 
 /* ===== Game Menu (popup) ===== */
