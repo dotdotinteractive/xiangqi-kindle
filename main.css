@@ -99,25 +99,21 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 #board-area {
     text-align: center;
     padding: 2px 0;
+    width: 100%;
 }
 
 /* ===== Xiangqi Board ===== */
-/* 9x10 table, each cell = one intersection.
-   Grid lines: border-right + border-bottom on each cell.
-   Lines cross at top-left corner = intersection point.
-   Pieces positioned at top-left corner via position:absolute + negative margin.
-   NO border on table itself - the cell borders form all lines. */
 
 #xiangqiboard {
-    display: inline-block;
-    padding: 50px;
+    text-align: center;
+    padding: 50px 0;
 }
 
 #xiangqiboard table {
     border-collapse: collapse;
     background: #f5edd6;
-    /* No table border - cell borders draw all lines */
     border: none;
+    margin: 0 auto; /* center the table */
 }
 
 #xiangqiboard td {
