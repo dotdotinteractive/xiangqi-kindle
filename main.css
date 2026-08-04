@@ -224,7 +224,7 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     cursor: pointer;
     /* Shift text up ~10% to center it in the circle */
     position: relative;
-    top: -5px;
+    top: -10px;
 }
 
 .xq-piece-red {
