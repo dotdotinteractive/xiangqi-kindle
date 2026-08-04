@@ -108,26 +108,25 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
    Piece table: 10 rows x 9 cols, transparent, pieces centered = on intersections
    Grid table offset by half cell so lines align with piece centers */
 
-/* Cell size: distance between intersections */
+/* Container: fixed width = piece table width, centered on screen */
 #xiangqiboard {
     position: relative;
-    text-align: center;
-    padding: 48px 0;
+    width: 1026px;  /* 9 * 114 = piece table width */
+    margin: 0 auto;
+    padding: 57px 0; /* half cell padding so grid lines aren't cut off */
 }
 
 /* --- Grid table (visible lines) --- */
+/* Positioned absolutely, shifted by half cell (57px) so grid lines
+   align with piece table cell centers (intersections). */
 .grid-table {
     border-collapse: collapse;
     background: #f5edd6;
-    margin: 0 auto;
-    position: relative;
+    position: absolute;
+    top: 57px;    /* half cell down from container top */
+    left: 57px;   /* half cell right from container left */
     z-index: 1;
-    /* Outer border = left/right/top/bottom edges of board.
-       This also keeps the outer vertical lines continuous through the river. */
-    border: 2px solid #000;
-    /* Offset by half cell so grid lines align with piece centers */
-    margin-top: 57px;  /* half of 114px */
-    margin-left: -57px; /* shift left by half cell */
+    border: 2px solid #000; /* outer border = board edge */
 }
 
 .gcell {
@@ -139,16 +138,14 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 }
 
 /* River row (grid row 4): no borders = no lines in the river area.
-   The outer vertical lines (left/right edges) are drawn by the
-   grid table's outer border, so they continue through the river. */
+   The outer vertical lines continue via the grid table's outer border. */
 .gcell.river-row {
     border: none;
 }
 
 /* Palace diagonals in grid cells.
    Each palace is 2x2 grid cells = 228x228px area.
-   Diagonal length = sqrt(228^2 + 228^2) ≈ 322px
-   We draw from the top-left corner of the top-left grid cell. */
+   Diagonal length = sqrt(228^2 + 228^2) ≈ 322px */
 .pdiag {
     position: absolute;
     top: -1px;
@@ -171,7 +168,6 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 .pdiag-bl {
     -webkit-transform: rotate(-45deg);
     transform: rotate(-45deg);
-    /* Start from top-right corner instead */
     left: auto;
     right: -1px;
     -webkit-transform-origin: 100% 0;
@@ -179,13 +175,13 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 }
 
 /* --- Piece table (transparent, on top) --- */
+/* Positioned absolutely at top-left of container, no offset.
+   Each cell center = one intersection point. */
 .piece-table {
     border-collapse: collapse;
-    margin: 0 auto;
     position: absolute;
-    top: 48px;    /* same as #xiangqiboard padding */
-    left: 50%;
-    margin-left: -513px; /* 9 * 114 / 2 = 513, center the table */
+    top: 0;
+    left: 0;
     z-index: 3;
 }
 
