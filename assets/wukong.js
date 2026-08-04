@@ -11,6 +11,11 @@
  ===============================================
 \************************************************/
 
+// Console polyfill for old WebKit (Kindle Mesquite ~Safari 5)
+if (typeof console === 'undefined') {
+  var console = { log: function() {}, error: function() {}, warn: function() {}, info: function() {} };
+}
+
 var Engine = function Engine() {
   var _ref;
   // engine version
