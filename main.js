@@ -94,60 +94,60 @@
             }
         }
 
-        /* Board: 9x10 table, each cell = one intersection.
-           Grid lines: border-right + border-bottom on each cell.
-           Lines cross at top-left corner = intersection point.
-           Pieces positioned at top-left corner via position:absolute.
+        /* Two-table approach (based on leidZhang/JSXiangqi):
+           1. Grid table: 9 rows x 8 cols, with borders = grid lines
+              8 cols = 8 gaps = 9 vertical lines
+              9 rows = 9 gaps = 10 horizontal lines
+              Row 4 (river): no borders = river gap
+           2. Piece table: 10 rows x 9 cols, no borders, transparent
+              Each cell = one intersection, pieces centered = on intersections
+           Grid table is offset by half a cell so lines align with piece centers.
 
-           River: rows 4-5, inner vertical lines broken.
-           Palace: 3x3 area with diagonal X lines.
-           Top palace: rows 0-2, cols 3-5 (black side)
-           Bottom palace: rows 7-9, cols 3-5 (red side) */
-        var html = '<table cellspacing="0" cellpadding="0"><tbody>';
+           Palace diagonals drawn as rotated divs inside grid cells.
+           Top palace: grid rows 0-2, cols 3-5
+           Bottom palace: grid rows 5-7, cols 3-5 */
 
+        /* === 1. Grid table (visible lines) === */
+        var gridHtml = '<table class="grid-table" cellspacing="0" cellpadding="0"><tbody>';
+        for (var gr = 0; gr < 9; gr++) {
+            gridHtml += '<tr>';
+            for (var gc = 0; gc < 8; gc++) {
+                var gClass = 'gcell';
+                if (gr === 4) gClass += ' river-row'; /* river: no border */
+                /* Palace diagonals in grid cells.
+                   Top palace: piece rows 0-2, cols 3-5 = grid rows 0-1, cols 3-4
+                   Bottom palace: piece rows 7-9, cols 3-5 = grid rows 7-8, cols 3-4 */
+                var diag = '';
+                if (gr === 0 && gc === 3) diag = '<span class="pdiag pdiag-br"></span>';
+                if (gr === 0 && gc === 4) diag = '<span class="pdiag pdiag-bl"></span>';
+                if (gr === 7 && gc === 3) diag = '<span class="pdiag pdiag-br"></span>';
+                if (gr === 7 && gc === 4) diag = '<span class="pdiag pdiag-bl"></span>';
+                gridHtml += '<td class="' + gClass + '">' + diag + '</td>';
+            }
+            gridHtml += '</tr>';
+        }
+        gridHtml += '</tbody></table>';
+
+        /* === 2. Piece table (transparent, on top) === */
+        var pieceHtml = '<table class="piece-table" cellspacing="0" cellpadding="0"><tbody>';
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
-            html += '<tr>';
+            pieceHtml += '<tr>';
             for (var file = 0; file < COLS; file++) {
                 var actualRow = flip ? (ROWS - 1 - displayRow) : displayRow;
                 var actualFile = flip ? (COLS - 1 - file) : file;
                 var sq = squareFromCoord(actualRow, actualFile);
                 var piece = engine.getPiece(sq);
 
-                var classes = 'col' + file + ' row' + displayRow;
                 var content = '';
 
-                /* River text between row 4 and row 5 */
+                /* River text in the middle rows */
                 if (displayRow === 4 && file === 1) {
                     content += '<span class="river-text">楚 河</span>';
                 } else if (displayRow === 4 && file === 6) {
                     content += '<span class="river-text">漢 界</span>';
                 }
 
-                /* Palace diagonals: drawn as thin divs positioned at cell corners.
-                   Top palace: rows 0-2, cols 3-5. Diagonals connect:
-                     (row0,col3)-(row2,col5) and (row0,col5)-(row2,col3)
-                   Bottom palace: rows 7-9, cols 3-5. Diagonals connect:
-                     (row7,col3)-(row9,col5) and (row7,col5)-(row9,col3)
-                   We draw diagonal lines from the top-left corner of specific cells. */
-
-                /* Top palace: diagonal from (0,3) to (2,5) - starts at cell row0,col3 */
-                if (displayRow === 0 && file === 3) {
-                    content += '<span class="palace-diag palace-diag-tr"></span>';
-                }
-                /* Top palace: diagonal from (0,5) to (2,3) - starts at cell row0,col5 */
-                if (displayRow === 0 && file === 5) {
-                    content += '<span class="palace-diag palace-diag-tl"></span>';
-                }
-                /* Bottom palace: diagonal from (7,3) to (9,5) - starts at cell row7,col3 */
-                if (displayRow === 7 && file === 3) {
-                    content += '<span class="palace-diag palace-diag-tr"></span>';
-                }
-                /* Bottom palace: diagonal from (7,5) to (9,3) - starts at cell row7,col5 */
-                if (displayRow === 7 && file === 5) {
-                    content += '<span class="palace-diag palace-diag-tl"></span>';
-                }
-
-                /* Piece at intersection (top-left corner of cell) */
+                /* Piece centered in cell = on intersection */
                 if (piece > 0) {
                     var pieceClass = isRed(piece) ? 'xq-piece-red' : 'xq-piece-black';
                     var pieceExtra = '';
@@ -162,15 +162,14 @@
                     content += '<span class="xq-last-marker"></span>';
                 }
 
-                /* Click hit area centered on intersection */
-                content = '<span class="xq-hit" onclick="tapSquare(' + sq + ')"></span>' + content;
-
-                html += '<td class="' + classes + '">' + content + '</td>';
+                var pClass = 'pcell';
+                pieceHtml += '<td class="' + pClass + '" onclick="tapSquare(' + sq + ')">' + content + '</td>';
             }
-            html += '</tr>';
+            pieceHtml += '</tr>';
         }
-        html += '</tbody></table>';
-        boardEl.innerHTML = html;
+        pieceHtml += '</tbody></table>';
+
+        boardEl.innerHTML = gridHtml + pieceHtml;
     }
 
     window.tapSquare = function(sq) {

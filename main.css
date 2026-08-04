@@ -102,122 +102,106 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     width: 100%;
 }
 
-/* ===== Xiangqi Board ===== */
+/* ===== Xiangqi Board (two-table approach) ===== */
+/* Based on leidZhang/JSXiangqi (Apache-2.0)
+   Grid table: 9 rows x 8 cols with borders = grid lines
+   Piece table: 10 rows x 9 cols, transparent, pieces centered = on intersections
+   Grid table offset by half cell so lines align with piece centers */
 
+/* Cell size: distance between intersections */
 #xiangqiboard {
+    position: relative;
     text-align: center;
-    padding: 50px 0;
+    padding: 48px 0;
 }
 
-#xiangqiboard table {
+/* --- Grid table (visible lines) --- */
+.grid-table {
     border-collapse: collapse;
     background: #f5edd6;
-    border: none;
-    margin: 0 auto; /* center the table */
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    /* Outer border = left/right/top/bottom edges of board.
+       This also keeps the outer vertical lines continuous through the river. */
+    border: 2px solid #000;
+    /* Offset by half cell so grid lines align with piece centers */
+    margin-top: 57px;  /* half of 114px */
+    margin-left: -57px; /* shift left by half cell */
 }
 
-#xiangqiboard td {
+.gcell {
     width: 114px;
     height: 114px;
+    border: 2px solid #000;
     padding: 0;
     position: relative;
-    border-right: 2px solid #000;
-    border-bottom: 2px solid #000;
 }
 
-/* Click hit area: centered on intersection (top-left corner of cell) */
-.xq-hit {
-    position: absolute;
-    top: -57px;
-    left: -57px;
-    width: 114px;
-    height: 114px;
-    cursor: pointer;
-    z-index: 10;
+/* River row (grid row 4): no borders = no lines in the river area.
+   The outer vertical lines (left/right edges) are drawn by the
+   grid table's outer border, so they continue through the river. */
+.gcell.river-row {
+    border: none;
 }
 
-/* First column: draw left border (1st vertical line = left edge) */
-#xiangqiboard td.col0 {
-    border-left: 2px solid #000;
-}
-
-/* First row: draw top border (1st horizontal line = top edge) */
-#xiangqiboard td.row0 {
-    border-top: 2px solid #000;
-}
-
-/* Last column: zero width (no gap, just holds last intersection's pieces) */
-#xiangqiboard td.col8 {
-    width: 0;
-    border-right: none;
-}
-
-/* Last row: zero height (no gap, just holds last intersection's pieces) */
-#xiangqiboard td.row9 {
-    height: 0;
-    border-bottom: none;
-}
-
-/* River: row 4 has no bottom border (horizontal gap between row 4 and 5) */
-#xiangqiboard td.row4 {
-    border-bottom: none;
-}
-
-/* River: break inner vertical lines in rows 4 and 5.
-   Only outer columns (col0 and col8) keep their vertical lines through river.
-   Inner columns (col1-col7) have no border-right in rows 4 and 5. */
-#xiangqiboard td.row4.col1, #xiangqiboard td.row4.col2,
-#xiangqiboard td.row4.col3, #xiangqiboard td.row4.col4,
-#xiangqiboard td.row4.col5, #xiangqiboard td.row4.col6,
-#xiangqiboard td.row4.col7 {
-    border-right: none;
-}
-
-#xiangqiboard td.row5.col1, #xiangqiboard td.row5.col2,
-#xiangqiboard td.row5.col3, #xiangqiboard td.row5.col4,
-#xiangqiboard td.row5.col5, #xiangqiboard td.row5.col6,
-#xiangqiboard td.row5.col7 {
-    border-right: none;
-}
-
-/* Palace diagonals: drawn as rotated thin divs.
-   Each diagonal spans 2 cells (228px) diagonally across a 2x2 cell area.
+/* Palace diagonals in grid cells.
+   Each palace is 2x2 grid cells = 228x228px area.
    Diagonal length = sqrt(228^2 + 228^2) ≈ 322px
-   Rotation: 45deg for top-left to bottom-right, -45deg for top-right to bottom-left.
-   Positioned at top-left corner of starting cell (the intersection point). */
-.palace-diag {
+   We draw from the top-left corner of the top-left grid cell. */
+.pdiag {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: -1px;
+    left: -1px;
     width: 322px;
     height: 2px;
     background: #000;
-    z-index: 0;
-    /* Transform origin at the starting point (top-left of cell) */
+    z-index: 2;
     -webkit-transform-origin: 0 0;
     transform-origin: 0 0;
 }
 
-/* Diagonal going top-left to bottom-right (rotate 45deg) */
-.palace-diag-tr {
+/* Diagonal: top-left to bottom-right (\) */
+.pdiag-br {
     -webkit-transform: rotate(45deg);
     transform: rotate(45deg);
 }
 
-/* Diagonal going top-right to bottom-left (rotate -45deg) */
-.palace-diag-tl {
+/* Diagonal: top-right to bottom-left (/) */
+.pdiag-bl {
     -webkit-transform: rotate(-45deg);
     transform: rotate(-45deg);
+    /* Start from top-right corner instead */
+    left: auto;
+    right: -1px;
+    -webkit-transform-origin: 100% 0;
+    transform-origin: 100% 0;
+}
+
+/* --- Piece table (transparent, on top) --- */
+.piece-table {
+    border-collapse: collapse;
+    margin: 0 auto;
+    position: absolute;
+    top: 48px;    /* same as #xiangqiboard padding */
+    left: 50%;
+    margin-left: -513px; /* 9 * 114 / 2 = 513, center the table */
+    z-index: 3;
+}
+
+.pcell {
+    width: 114px;
+    height: 114px;
+    padding: 0;
+    position: relative;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    border: none;
 }
 
 /* River text */
 .river-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 228px;
-    margin-left: -114px;
-    margin-top: -14px;
     font-size: 27px;
     color: #888;
     font-weight: normal;
@@ -225,11 +209,9 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     pointer-events: none;
 }
 
-/* Piece - at top-left corner (intersection) */
+/* Piece - centered in cell = on intersection */
 .xq-piece {
-    position: absolute;
-    top: -48px;
-    left: -48px;
+    display: inline-block;
     width: 95px;
     height: 95px;
     line-height: 95px;
@@ -238,7 +220,8 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     font-weight: bold;
     border-radius: 50%;
     border: 3px solid #000;
-    z-index: 2;
+    vertical-align: middle;
+    cursor: pointer;
 }
 
 .xq-piece-red {
@@ -257,24 +240,24 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     background: #ccc !important;
 }
 
-/* Legal move dot */
+/* Legal move dot - centered in cell */
 .xq-dot {
-    position: absolute;
-    top: -14px;
-    left: -14px;
+    display: inline-block;
     width: 27px;
     height: 27px;
     border-radius: 50%;
     background: #555;
     opacity: 0.5;
-    z-index: 1;
+    vertical-align: middle;
 }
 
-/* Legal capture ring */
+/* Legal capture ring - centered in cell */
 .xq-ring {
     position: absolute;
-    top: -51px;
-    left: -51px;
+    top: 50%;
+    left: 50%;
+    margin-top: -51px;
+    margin-left: -51px;
     width: 102px;
     height: 102px;
     border-radius: 50%;
@@ -282,17 +265,15 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     z-index: 1;
 }
 
-/* Last move marker */
+/* Last move marker - centered in cell */
 .xq-last-marker {
-    position: absolute;
-    top: -14px;
-    left: -14px;
+    display: inline-block;
     width: 27px;
-    height: 28px;
+    height: 27px;
     border-radius: 50%;
     background: #999;
     opacity: 0.3;
-    z-index: 1;
+    vertical-align: middle;
 }
 
 /* ===== Game Menu (centered popup overlay) ===== */
