@@ -2,7 +2,24 @@
    Game logic + UI binding, built on Wukong engine */
 
 (function() {
-    'use strict';
+
+    // Helper: add class (classList not supported in old WebKit)
+    function addClass(el, cls) {
+        if (!el) return;
+        var cn = el.className;
+        if (cn.indexOf(cls) === -1) {
+            el.className = cn ? (cn + ' ' + cls) : cls;
+        }
+    }
+
+    // Helper: remove class
+    function removeClass(el, cls) {
+        if (!el) return;
+        var cn = el.className;
+        if (cn.indexOf(cls) !== -1) {
+            el.className = cn.replace(new RegExp('\\b' + cls + '\\b', 'g'), '').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+        }
+    }
 
     // Piece encoding (matches Wukong engine)
     // 0=EMPTY, 1-7=RED, 8-14=BLACK
@@ -322,8 +339,8 @@
 
     // Show game over screen
     function showGameOver() {
-        document.getElementById('board-screen').classList.add('hidden');
-        document.getElementById('game-over-screen').classList.remove('hidden');
+        addClass(document.getElementById('board-screen'), 'hidden');
+        removeClass(document.getElementById('game-over-screen'), 'hidden');
         document.getElementById('result-title').textContent = gameResult;
         updateStatus();
     }
@@ -359,9 +376,9 @@
         gameResult = '*';
         aiThinking = false;
 
-        document.getElementById('menu-screen').classList.add('hidden');
-        document.getElementById('game-over-screen').classList.add('hidden');
-        document.getElementById('board-screen').classList.remove('hidden');
+        addClass(document.getElementById('menu-screen'), 'hidden');
+        addClass(document.getElementById('game-over-screen'), 'hidden');
+        removeClass(document.getElementById('board-screen'), 'hidden');
 
         drawBoard();
         updateStatus();
@@ -394,8 +411,8 @@
         lastMoveTo = null;
         gameResult = '*';
 
-        document.getElementById('game-over-screen').classList.add('hidden');
-        document.getElementById('board-screen').classList.remove('hidden');
+        addClass(document.getElementById('game-over-screen'), 'hidden');
+        removeClass(document.getElementById('board-screen'), 'hidden');
 
         drawBoard();
         updateStatus();
@@ -410,9 +427,9 @@
 
     // Back to menu
     function backToMenu() {
-        document.getElementById('board-screen').classList.add('hidden');
-        document.getElementById('game-over-screen').classList.add('hidden');
-        document.getElementById('menu-screen').classList.remove('hidden');
+        addClass(document.getElementById('board-screen'), 'hidden');
+        addClass(document.getElementById('game-over-screen'), 'hidden');
+        removeClass(document.getElementById('menu-screen'), 'hidden');
     }
 
     // Set AI difficulty
@@ -422,9 +439,9 @@
         for (var i = 0; i < btns.length; i++) {
             var d = parseInt(btns[i].getAttribute('data-depth'), 10);
             if (d === depth) {
-                btns[i].classList.add('selected');
+                addClass(btns[i], 'selected');
             } else {
-                btns[i].classList.remove('selected');
+                removeClass(btns[i], 'selected');
             }
         }
     }
@@ -433,39 +450,39 @@
     function init() {
         initEngine();
 
-        // Menu buttons
-        document.getElementById('vs-ai-btn').addEventListener('click', function() {
+        // Menu buttons - use .onclick for old WebKit compatibility
+        document.getElementById('vs-ai-btn').onclick = function() {
             gameMode = 'ai-red';
             newGame();
-        });
+        };
 
-        document.getElementById('vs-ai-black-btn').addEventListener('click', function() {
+        document.getElementById('vs-ai-black-btn').onclick = function() {
             gameMode = 'ai-black';
             newGame();
-        });
+        };
 
-        document.getElementById('two-player-btn').addEventListener('click', function() {
+        document.getElementById('two-player-btn').onclick = function() {
             gameMode = 'two-player';
             newGame();
-        });
+        };
 
         // Difficulty buttons
         var diffBtns = document.querySelectorAll('.diff-btn');
         for (var i = 0; i < diffBtns.length; i++) {
-            diffBtns[i].addEventListener('click', function() {
+            diffBtns[i].onclick = function() {
                 setDifficulty(parseInt(this.getAttribute('data-depth'), 10));
-            });
+            };
         }
 
         // Game control buttons
-        document.getElementById('btn-new').addEventListener('click', newGame);
-        document.getElementById('btn-undo').addEventListener('click', undoMove);
-        document.getElementById('btn-flip').addEventListener('click', flipBoard);
-        document.getElementById('btn-menu').addEventListener('click', backToMenu);
+        document.getElementById('btn-new').onclick = newGame;
+        document.getElementById('btn-undo').onclick = undoMove;
+        document.getElementById('btn-flip').onclick = flipBoard;
+        document.getElementById('btn-menu').onclick = backToMenu;
 
         // Game over buttons
-        document.getElementById('play-again-btn').addEventListener('click', newGame);
-        document.getElementById('back-menu-btn').addEventListener('click', backToMenu);
+        document.getElementById('play-again-btn').onclick = newGame;
+        document.getElementById('back-menu-btn').onclick = backToMenu;
 
         // Set default difficulty
         setDifficulty(3);
@@ -479,8 +496,11 @@
     }
 
     // Start when DOM is ready
+    // Use setTimeout(0) as fallback for old WebKit without addEventListener
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.onreadystatechange = function() {
+            if (document.readyState === 'complete') init();
+        };
     } else {
         init();
     }
