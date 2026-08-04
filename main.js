@@ -96,8 +96,13 @@
 
         /* Board: 9x10 table, each cell = one intersection.
            Grid lines: border-right + border-bottom on each cell.
-           Lines cross at top-left corner of each cell = intersection point.
-           Pieces positioned at top-left corner using negative margin. */
+           Lines cross at top-left corner = intersection point.
+           Pieces positioned at top-left corner via position:absolute.
+
+           River: rows 4-5, inner vertical lines broken.
+           Palace: 3x3 area with diagonal X lines.
+           Top palace: rows 0-2, cols 3-5 (black side)
+           Bottom palace: rows 7-9, cols 3-5 (red side) */
         var html = '<table cellspacing="0" cellpadding="0"><tbody>';
 
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
@@ -118,6 +123,30 @@
                     content += '<span class="river-text">漢 界</span>';
                 }
 
+                /* Palace diagonals: drawn as thin divs positioned at cell corners.
+                   Top palace: rows 0-2, cols 3-5. Diagonals connect:
+                     (row0,col3)-(row2,col5) and (row0,col5)-(row2,col3)
+                   Bottom palace: rows 7-9, cols 3-5. Diagonals connect:
+                     (row7,col3)-(row9,col5) and (row7,col5)-(row9,col3)
+                   We draw diagonal lines from the top-left corner of specific cells. */
+
+                /* Top palace: diagonal from (0,3) to (2,5) - starts at cell row0,col3 */
+                if (displayRow === 0 && file === 3) {
+                    content += '<span class="palace-diag palace-diag-tr"></span>';
+                }
+                /* Top palace: diagonal from (0,5) to (2,3) - starts at cell row0,col5 */
+                if (displayRow === 0 && file === 5) {
+                    content += '<span class="palace-diag palace-diag-tl"></span>';
+                }
+                /* Bottom palace: diagonal from (7,3) to (9,5) - starts at cell row7,col3 */
+                if (displayRow === 7 && file === 3) {
+                    content += '<span class="palace-diag palace-diag-tr"></span>';
+                }
+                /* Bottom palace: diagonal from (7,5) to (9,3) - starts at cell row7,col5 */
+                if (displayRow === 7 && file === 5) {
+                    content += '<span class="palace-diag palace-diag-tl"></span>';
+                }
+
                 /* Piece at intersection (top-left corner of cell) */
                 if (piece > 0) {
                     var pieceClass = isRed(piece) ? 'xq-piece-red' : 'xq-piece-black';
@@ -133,7 +162,7 @@
                     content += '<span class="xq-last-marker"></span>';
                 }
 
-                /* Click hit area: 120x120 square centered on intersection (top-left corner) */
+                /* Click hit area centered on intersection */
                 content = '<span class="xq-hit" onclick="tapSquare(' + sq + ')"></span>' + content;
 
                 html += '<td class="' + classes + '">' + content + '</td>';

@@ -158,9 +158,56 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     border-bottom: none;
 }
 
-/* River: row 4 has no bottom border (gap between row 4 and 5) */
+/* River: row 4 has no bottom border (horizontal gap between row 4 and 5) */
 #xiangqiboard td.row4 {
     border-bottom: none;
+}
+
+/* River: break inner vertical lines in rows 4 and 5.
+   Only outer columns (col0 and col8) keep their vertical lines through river.
+   Inner columns (col1-col7) have no border-right in rows 4 and 5. */
+#xiangqiboard td.row4.col1, #xiangqiboard td.row4.col2,
+#xiangqiboard td.row4.col3, #xiangqiboard td.row4.col4,
+#xiangqiboard td.row4.col5, #xiangqiboard td.row4.col6,
+#xiangqiboard td.row4.col7 {
+    border-right: none;
+}
+
+#xiangqiboard td.row5.col1, #xiangqiboard td.row5.col2,
+#xiangqiboard td.row5.col3, #xiangqiboard td.row5.col4,
+#xiangqiboard td.row5.col5, #xiangqiboard td.row5.col6,
+#xiangqiboard td.row5.col7 {
+    border-right: none;
+}
+
+/* Palace diagonals: drawn as rotated thin divs.
+   Each diagonal spans 2 cells (228px) diagonally across a 2x2 cell area.
+   Diagonal length = sqrt(228^2 + 228^2) ≈ 322px
+   Rotation: 45deg for top-left to bottom-right, -45deg for top-right to bottom-left.
+   Positioned at top-left corner of starting cell (the intersection point). */
+.palace-diag {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 322px;
+    height: 2px;
+    background: #000;
+    z-index: 0;
+    /* Transform origin at the starting point (top-left of cell) */
+    -webkit-transform-origin: 0 0;
+    transform-origin: 0 0;
+}
+
+/* Diagonal going top-left to bottom-right (rotate 45deg) */
+.palace-diag-tr {
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+/* Diagonal going top-right to bottom-left (rotate -45deg) */
+.palace-diag-tl {
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
 }
 
 /* River text */
@@ -248,12 +295,21 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     z-index: 1;
 }
 
-/* ===== Game Menu (popup) ===== */
+/* ===== Game Menu (centered popup overlay) ===== */
 #game-menu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    margin-top: -160px;
+    margin-left: -200px;
+    width: 400px;
     text-align: center;
-    padding: 4px;
-    border-top: 2px solid #000;
+    padding: 20px;
+    border: 3px solid #000;
     background: #fff;
+    z-index: 100;
+    /* Semi-transparent overlay effect */
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.3);
 }
 
 .mitem {
