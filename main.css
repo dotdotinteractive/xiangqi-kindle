@@ -203,6 +203,10 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     font-weight: normal;
     text-align: center;
     pointer-events: none;
+    /* Push down by half a cell so text sits in the river gap
+       (between piece row 4 and row 5), not on the horizontal line */
+    position: relative;
+    top: 57px;
 }
 
 /* Piece - centered in cell = on intersection */

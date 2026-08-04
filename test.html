@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Xiangqi Test</title>
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <script type="text/javascript">
+       if (typeof console === 'undefined') {
+           var console = { log: function() {}, error: function() {}, warn: function() {}, info: function() {} };
+       }
+    </script>
+    <script type="text/javascript" src="assets/wukong.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <div id="menu-screen">
+            <div class="menu-content">
+                <h1>Xiangqi</h1>
+                <button type="button" class="menu-btn" id="vs-ai-btn">vs AI (Red)</button>
+                <button type="button" class="menu-btn" id="vs-ai-black-btn">vs AI (Black)</button>
+                <button type="button" class="menu-btn" id="two-player-btn">Two Player</button>
+                <div class="difficulty-section">
+                    <h3>AI Difficulty</h3>
+                    <button type="button" class="diff-btn" id="diff-easy-btn" data-depth="1">Easy</button>
+                    <button type="button" class="diff-btn" id="diff-medium-btn" data-depth="3">Medium</button>
+                    <button type="button" class="diff-btn" id="diff-hard-btn" data-depth="5">Hard</button>
+                </div>
+            </div>
+        </div>
+        <div id="board-screen" class="hidden">
+            <div id="status-bar">
+                <span id="status"></span>
+                <span id="menu-toggle" onclick="toggleMenu()">[Menu]</span>
+            </div>
+            <div id="board-area">
+                <div id="xiangqiboard"></div>
+            </div>
+            <div id="game-menu" class="hidden">
+                <button type="button" class="mitem" id="btn-new">New Game</button>
+                <button type="button" class="mitem" id="btn-undo">Undo</button>
+                <button type="button" class="mitem" id="btn-flip">Flip Board</button>
+                <button type="button" class="mitem" id="btn-pgn">Show Moves</button>
+                <button type="button" class="mitem" id="btn-menu">Main Menu</button>
+            </div>
+            <div id="move-history-wrap" class="hidden">
+                <textarea id="pgn" readonly rows="3"></textarea>
+            </div>
+        </div>
+        <div id="game-over-screen" class="hidden">
+            <div class="menu-content">
+                <h2 id="result-title">Game Over</h2>
+                <button type="button" class="menu-btn" id="play-again-btn">Play Again</button>
+                <button type="button" class="menu-btn" id="back-menu-btn">Main Menu</button>
+            </div>
+        </div>
+    </div>
+    <div id="debug-output" style="position:fixed;top:0;right:0;background:yellow;font-size:12px;padding:10px;z-index:9999;max-width:600px;"></div>
+    <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript">
+       setTimeout(function() {
+           var btn = document.getElementById('vs-ai-btn');
+           if (btn && btn.onclick) btn.onclick();
+           setTimeout(function() {
+               var grid = document.querySelector('.grid-table');
+               var piece = document.querySelector('.piece-table');
+               var container = document.getElementById('xiangqiboard');
+               var dbg = document.getElementById('debug-output');
+               function info(msg) { dbg.innerHTML += msg + '<br>'; }
+               
+               if (!grid || !piece) { info('Tables not found!'); return; }
+               
+               var gr = grid.getBoundingClientRect();
+               var pr = piece.getBoundingClientRect();
+               var cr = container.getBoundingClientRect();
+               
+               info('Container: L=' + cr.left + ' T=' + cr.top + ' W=' + cr.width);
+               info('Grid: L=' + gr.left + ' T=' + gr.top + ' W=' + gr.width + ' H=' + gr.height);
+               info('Piece: L=' + pr.left + ' T=' + pr.top + ' W=' + pr.width + ' H=' + pr.height);
+               
+               var fg = document.querySelector('.gcell').getBoundingClientRect();
+               var fp = document.querySelector('.pcell').getBoundingClientRect();
+               info('First grid cell: L=' + fg.left + ' T=' + fg.top);
+               info('First piece cell: L=' + fp.left + ' T=' + fp.top + ' center=(' + (fp.left+fp.width/2) + ',' + (fp.top+fp.height/2) + ')');
+               info('X diff: ' + ((fp.left+fp.width/2) - fg.left));
+               info('Y diff: ' + ((fp.top+fp.height/2) - fg.top));
+           }, 500);
+       }, 500);
+    </script>
+</body>
+</html>
