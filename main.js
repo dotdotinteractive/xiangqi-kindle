@@ -4,24 +4,9 @@
 (function() {
     'use strict';
 
-    // Piece encoding (matches Wukong engine)
-    // 0=EMPTY, 1-7=RED, 8-14=BLACK
     var PIECE_CHARS = [
-        '',     // 0 EMPTY
-        '兵',   // 1 RED_PAWN
-        '仕',   // 2 RED_ADVISOR
-        '相',   // 3 RED_BISHOP
-        '马',   // 4 RED_KNIGHT
-        '炮',   // 5 RED_CANNON
-        '车',   // 6 RED_ROOK
-        '帅',   // 7 RED_KING
-        '卒',   // 8 BLACK_PAWN
-        '士',   // 9 BLACK_ADVISOR
-        '象',   // 10 BLACK_BISHOP
-        '马',   // 11 BLACK_KNIGHT
-        '炮',   // 12 BLACK_CANNON
-        '车',   // 13 BLACK_ROOK
-        '将'    // 14 BLACK_KING
+        '', '兵', '仕', '相', '马', '炮', '车', '帅',
+        '卒', '士', '象', '马', '炮', '车', '将'
     ];
 
     var RED = 0;
@@ -29,7 +14,6 @@
     var COLS = 9;
     var ROWS = 10;
 
-    // Game state
     var engine = null;
     var gameMode = 'ai-red';
     var aiDepth = 3;
@@ -41,7 +25,6 @@
     var gameResult = '*';
     var aiThinking = false;
 
-    // Square mapping: square = (2 + displayRow) * 11 + (file + 1)
     function squareFromCoord(displayRow, file) {
         return (2 + displayRow) * 11 + (file + 1);
     }
@@ -54,7 +37,6 @@
         return piece >= 1 && piece <= 7;
     }
 
-    // Helper: show/hide screens by toggling 'hidden' class via className
     function showScreen(id) {
         var el = document.getElementById(id);
         if (el) el.className = el.className.replace('hidden', '').replace(/\s+/g, ' ');
@@ -67,31 +49,25 @@
         }
     }
 
-    // Error display
-    function showError(msg) {
+    function log(msg) {
         var el = document.getElementById('error-log');
-        if (el) {
-            el.innerHTML += msg + '<br>';
-        }
-        var st = document.getElementById('status');
-        if (st) st.textContent = 'ERR: ' + msg;
+        if (el) el.innerHTML += msg + '<br>';
     }
 
-    // Initialize engine
     function initEngine() {
         try {
             if (typeof Engine === 'undefined') {
-                showError('Engine not loaded');
+                log('ERROR: Engine not loaded');
                 return;
             }
             engine = new Engine();
             engine.setBoard(engine.START_FEN);
+            log('Engine OK');
         } catch (e) {
-            showError('initEngine: ' + (e && e.message ? e.message : e));
+            log('initEngine err: ' + (e && e.message ? e.message : e));
         }
     }
 
-    // Render the board
     function drawBoard() {
         if (!engine) return;
         var boardEl = document.getElementById('xiangqiboard');
@@ -99,7 +75,6 @@
 
         var html = '<table cellspacing="0"><tbody>';
 
-        // Pre-compute legal move targets ONCE
         var legalTargets = {};
         if (selectedSquare !== null) {
             try {
@@ -111,7 +86,7 @@
                     }
                 }
             } catch (e) {
-                showError('drawBoard moves: ' + (e && e.message ? e.message : e));
+                log('drawBoard moves err: ' + (e && e.message ? e.message : e));
             }
         }
 
@@ -157,7 +132,6 @@
         boardEl.innerHTML = html;
     }
 
-    // Handle square tap
     window.tapSquare = function(sq) {
         if (!engine || aiThinking || gameResult !== '*') return;
 
@@ -192,7 +166,6 @@
         }
     };
 
-    // Try to make a move
     function tryMove(fromSq, toSq) {
         try {
             var legalMoves = engine.generateLegalMoves();
@@ -206,19 +179,18 @@
                 }
             }
         } catch (e) {
-            showError('tryMove: ' + (e && e.message ? e.message : e));
+            log('tryMove err: ' + (e && e.message ? e.message : e));
         }
         return false;
     }
 
-    // AI move
     function aiMove() {
         if (!engine || gameResult !== '*') return;
         aiThinking = true;
-        document.getElementById('status').textContent = 'AI thinking...';
+        var st = document.getElementById('status');
+        if (st) st.textContent = 'AI thinking...';
 
         try {
-            // Use time-based search to avoid blocking too long
             var bestMove = 0;
             var tc = engine.getTimeControl();
             tc.timeSet = 1;
@@ -233,7 +205,6 @@
                 lastMoveTo = engine.getTargetSquare(bestMove);
                 engine.makeMove(bestMove);
             } else {
-                // Fallback: pick first legal move
                 var moves = engine.generateLegalMoves();
                 if (moves.length > 0) {
                     bestMove = moves[0].move;
@@ -250,11 +221,10 @@
             checkGameOver();
         } catch (e) {
             aiThinking = false;
-            showError('aiMove: ' + (e && e.message ? e.message : e));
+            log('aiMove err: ' + (e && e.message ? e.message : e));
         }
     }
 
-    // Update status display
     function updateStatus() {
         if (!engine) return;
         var side = engine.getSide();
@@ -268,7 +238,6 @@
         }
     }
 
-    // Update PGN display
     function updatePgn() {
         if (!engine) return;
         try {
@@ -285,12 +254,9 @@
                 pgnEl.value = pgn;
                 pgnEl.scrollTop = pgnEl.scrollHeight;
             }
-        } catch (e) {
-            // ignore
-        }
+        } catch (e) {}
     }
 
-    // Check for game over
     function checkGameOver() {
         if (!engine) return;
         try {
@@ -298,23 +264,15 @@
             if (moves.length === 0) {
                 var side = engine.getSide();
                 gameResult = (side === RED) ? 'Black wins!' : 'Red wins!';
-                showGameOver();
+                hideScreen('board-screen');
+                showScreen('game-over-screen');
+                var titleEl = document.getElementById('result-title');
+                if (titleEl) titleEl.textContent = gameResult;
+                updateStatus();
             }
-        } catch (e) {
-            // ignore
-        }
+        } catch (e) {}
     }
 
-    // Show game over screen
-    function showGameOver() {
-        hideScreen('board-screen');
-        showScreen('game-over-screen');
-        var titleEl = document.getElementById('result-title');
-        if (titleEl) titleEl.textContent = gameResult;
-        updateStatus();
-    }
-
-    // New game
     window.newGame = function() {
         if (!engine) return;
         try {
@@ -338,11 +296,10 @@
                 setTimeout(aiMove, 200);
             }
         } catch (e) {
-            showError('newGame: ' + (e && e.message ? e.message : e));
+            log('newGame err: ' + (e && e.message ? e.message : e));
         }
     };
 
-    // Undo move
     window.undoMove = function() {
         if (!engine || aiThinking) return;
         try {
@@ -360,28 +317,22 @@
             drawBoard();
             updateStatus();
             updatePgn();
-        } catch (e) {
-            // ignore
-        }
+        } catch (e) {}
     };
 
-    // Flip board
     window.flipBoard = function() {
         flip ^= 1;
         drawBoard();
     };
 
-    // Back to menu
     function backToMenu() {
         hideScreen('board-screen');
         hideScreen('game-over-screen');
         showScreen('menu-screen');
     }
 
-    // Set AI difficulty
     function setDifficulty(depth) {
         aiDepth = depth;
-        // Update button styles using getElementById only
         var btns = ['diff-easy-btn', 'diff-medium-btn', 'diff-hard-btn'];
         for (var i = 0; i < btns.length; i++) {
             var btn = document.getElementById(btns[i]);
@@ -396,12 +347,10 @@
         }
     }
 
-    // Initialize
     function init() {
         try {
             initEngine();
 
-            // Menu buttons
             var vsAiBtn = document.getElementById('vs-ai-btn');
             if (vsAiBtn) vsAiBtn.onclick = function() { gameMode = 'ai-red'; newGame(); };
 
@@ -411,7 +360,6 @@
             var twoPlayerBtn = document.getElementById('two-player-btn');
             if (twoPlayerBtn) twoPlayerBtn.onclick = function() { gameMode = 'two-player'; newGame(); };
 
-            // Difficulty buttons - use getElementById, no querySelectorAll
             var diffEasy = document.getElementById('diff-easy-btn');
             if (diffEasy) diffEasy.onclick = function() { setDifficulty(1); };
 
@@ -421,7 +369,6 @@
             var diffHard = document.getElementById('diff-hard-btn');
             if (diffHard) diffHard.onclick = function() { setDifficulty(5); };
 
-            // Game control buttons
             var btnNew = document.getElementById('btn-new');
             if (btnNew) btnNew.onclick = newGame;
 
@@ -434,17 +381,14 @@
             var btnMenu = document.getElementById('btn-menu');
             if (btnMenu) btnMenu.onclick = backToMenu;
 
-            // Game over buttons
             var playAgain = document.getElementById('play-again-btn');
             if (playAgain) playAgain.onclick = newGame;
 
             var backMenu = document.getElementById('back-menu-btn');
             if (backMenu) backMenu.onclick = backToMenu;
 
-            // Set default difficulty
             setDifficulty(3);
 
-            // Draw initial board
             if (engine) {
                 drawBoard();
             }
@@ -452,10 +396,9 @@
             var statusEl = document.getElementById('status');
             if (statusEl) statusEl.textContent = 'Select mode to start';
         } catch (e) {
-            showError('init: ' + (e && e.message ? e.message : e));
+            log('init err: ' + (e && e.message ? e.message : e));
         }
     }
 
-    // Start when DOM is ready - use DOMContentLoaded like KShips
     document.addEventListener('DOMContentLoaded', init);
 })();

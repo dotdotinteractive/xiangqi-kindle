@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xiangqi</title>
     <link rel="stylesheet" type="text/css" href="main.css">
     <script type="text/javascript">
@@ -11,29 +10,6 @@
        }
     </script>
     <script type="text/javascript" src="assets/wukong.js"></script>
-    <script>
-       function updateChromeBar() {
-         var chromebar = {
-           "appId": "xyz.kindlegame.xiangqi",
-           "topNavBar": {
-             "template": "title",
-             "title": "Xiangqi",
-             "buttons": [
-               { "id": "KPP_MORE", "state": "enabled", "handling": "system" },
-               { "id": "KPP_CLOSE", "state": "enabled", "handling": "system" }
-             ]
-           }
-         };
-         if (window.kindle && window.kindle.messaging) {
-           window.kindle.messaging.sendMessage("com.lab126.chromebar", "configureChrome", chromebar);
-         }
-       };
-       if (window.kindle && window.kindle.appmgr) {
-         window.kindle.appmgr.ongo = function (ctx) {
-           updateChromeBar();
-         };
-       }
-    </script>
 </head>
 <body>
     <div id="game-container">
