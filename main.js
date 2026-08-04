@@ -399,7 +399,7 @@
 
     /* AI time limit based on difficulty (ms) */
     function aiTimeLimit() {
-        if (aiDepth >= 7) return 20000;  /* Hard: 20s */
+        if (aiDepth >= 7) return 15000;  /* Hard: 15s */
         if (aiDepth >= 3) return 4000;   /* Medium: 4s */
         return 2000;                      /* Easy: 2s */
     }
@@ -412,19 +412,24 @@
         var st = document.getElementById('status');
         if (st) st.textContent = 'AI thinking... (' + totalSecs + 's)';
 
-        /* Set up progress callback - called by engine every 2048 nodes.
+        /* Set up progress callback - called by engine every 256 nodes.
            This is the only chance to update UI during synchronous search.
-           Old WebKit may repaint text changes even during blocking code. */
+           Also force-stop the engine if time exceeded (backup for Date.now issues). */
         var searchStartTime = new Date().getTime();
         if (engine.setProgressCallback) {
             engine.setProgressCallback(function(nodes, depth, score) {
-                var elapsed = Math.floor((new Date().getTime() - searchStartTime) / 1000);
-                var remaining = totalSecs - elapsed;
-                if (remaining < 0) remaining = 0;
+                var now = new Date().getTime();
+                var elapsed = Math.floor((now - searchStartTime) / 1000);
+                /* Force stop if we've exceeded time limit (backup check) */
+                if (now - searchStartTime > timeLimit) {
+                    var tc2 = engine.getTimeControl();
+                    tc2.stopped = 1;
+                    engine.setTimeControl(tc2);
+                }
                 if (st) {
                     st.textContent = 'AI: depth ' + depth + '/' + aiDepth +
                                      '  ' + elapsed + 's/' + totalSecs + 's' +
-                                     '  ' + (nodes / 1000) + 'K nodes';
+                                     '  ' + Math.floor(nodes / 1000) + 'K nodes';
                 }
             });
         }

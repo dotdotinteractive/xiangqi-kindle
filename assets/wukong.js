@@ -1105,8 +1105,19 @@ var Engine = function Engine() {
   // onCheckProgress callback (set by UI) is called every 2048 nodes
   // to allow progress display updates during search
   var onCheckProgress = null;
+  var _searchStartTime = 0;
+  var _searchTimeLimit = 0;
   function checkTime() {
-    if (timing.timeSet == 1 && Date.now() > timing.stopTime) timing.stopped = 1;
+    if (timing.timeSet == 1) {
+      var now = Date.now();
+      if (typeof now !== 'number' || isNaN(now)) now = new Date().getTime();
+      if (now > timing.stopTime) timing.stopped = 1;
+      /* Also check against our own time limit as backup */
+      if (_searchTimeLimit > 0) {
+        var elapsed = now - _searchStartTime;
+        if (elapsed > _searchTimeLimit) timing.stopped = 1;
+      }
+    }
     if (onCheckProgress) onCheckProgress(nodes, guiDepth, guiScore);
   }
 
@@ -1161,7 +1172,7 @@ var Engine = function Engine() {
   function quiescence(alpha, beta) {
     pvLength[searchPly] = searchPly;
     nodes++;
-    if ((nodes & 2047) == 0) {
+    if ((nodes & 255) == 0) {
       checkTime();
       if (timing.stopped == 1) return 0;
     }
@@ -1184,6 +1195,7 @@ var Engine = function Engine() {
       var score = -quiescence(-beta, -alpha);
       _takeBack();
       if (timing.stopped == 1) return 0;
+      if (timing.timeSet == 1 && Date.now() > timing.stopTime) { timing.stopped = 1; return 0; }
       if (score > alpha) {
         storePvMove(move);
         alpha = score;
@@ -1210,7 +1222,7 @@ var Engine = function Engine() {
     if (searchPly && (score = readHashEntry(alpha, beta, bestMove, depth)) != NO_HASH && pvNode == 0) return score;
 
     // check time left
-    if ((nodes & 2047) == 0) {
+    if ((nodes & 255) == 0) {
       checkTime();
       if (timing.stopped == 1) return 0;
     }
@@ -1302,6 +1314,7 @@ var Engine = function Engine() {
       _takeBack();
       movesSearched++;
       if (timing.stopped == 1) return 0;
+      if (timing.timeSet == 1 && Date.now() > timing.stopTime) { timing.stopped = 1; return 0; }
       if (score > alpha) {
         hashFlag = HASH_EXACT;
         bestMove.value = move;
@@ -1348,7 +1361,12 @@ var Engine = function Engine() {
       score = negamax(-INFINITY, INFINITY, currentDepth, DO_NULL);
 
       // stop searching if time is up
-      if (timing.stopped == 1 || Date.now() > timing.stopTime && timing.time != -1) break;
+      var _now = Date.now();
+      if (typeof _now !== 'number' || isNaN(_now)) _now = new Date().getTime();
+      if (timing.stopped == 1 || (_now > timing.stopTime && timing.time != -1)) {
+        timing.stopped = 1;
+        break;
+      }
       var info = '';
       if (typeof document != 'undefined') var uciScore = 0;
       if (score >= -MATE_VALUE && score <= -MATE_SCORE) {
