@@ -10,23 +10,24 @@ TARGET_DIR="/var/local/mesquite/xiangqi"
 DB="/var/local/appreg.db"
 APP_ID="xyz.kindlegame.xiangqi"
 
-# Kill running app first (if any)
+# Write marker file to verify script ran
+echo "Xiangqi script ran at $(date)" > /tmp/xiangqi_launch_marker.txt
+
+# Try to stop existing app
 lipc-set-prop com.lab126.appmgrd stop app://$APP_ID 2>/dev/null
 sleep 1
 
-# Also try killing mesquite process directly
-killall mesquite 2>/dev/null
-sleep 1
-
+# Copy files
 if [ -d "$SOURCE_DIR" ]; then
-    if [ -d "$TARGET_DIR" ]; then
-        rm -rf "$TARGET_DIR"
-    fi
+    rm -rf "$TARGET_DIR"
     cp -r "$SOURCE_DIR" "$TARGET_DIR"
+    echo "Files copied" >> /tmp/xiangqi_launch_marker.txt
 else
+    echo "Source dir not found" >> /tmp/xiangqi_launch_marker.txt
     exit 1
 fi
 
+# Register in appreg.db
 sqlite3 "$DB" <<EOF
 INSERT OR IGNORE INTO interfaces(interface) VALUES('application');
 INSERT OR IGNORE INTO handlerIds(handlerId) VALUES('$APP_ID');
@@ -37,8 +38,8 @@ INSERT OR REPLACE INTO properties(handlerId,name,value)
 INSERT OR REPLACE INTO properties(handlerId,name,value)
   VALUES('$APP_ID','supportedOrientation','U');
 EOF
+echo "Registered" >> /tmp/xiangqi_launch_marker.txt
 
-echo Registered $APP_ID, you may now launch it with LIPC.
-sleep 2
-
-nohup lipc-set-prop com.lab126.appmgrd start app://$APP_ID >/dev/null 2>&1 &
+# Launch
+lipc-set-prop com.lab126.appmgrd start app://$APP_ID 2>/dev/null
+echo "Launched" >> /tmp/xiangqi_launch_marker.txt
