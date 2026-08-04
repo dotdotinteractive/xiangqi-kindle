@@ -108,23 +108,37 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
    Piece table: 10 rows x 9 cols, transparent, pieces centered = on intersections
    Grid table offset by half cell so lines align with piece centers */
 
-/* Container: fixed width = piece table width, centered on screen */
+/* Container: fixed width = piece table width + half cell padding on each side.
+   No CSS padding used - explicit height and absolute positioning only,
+   to avoid old WebKit padding+absolute positioning inconsistencies. */
 #xiangqiboard {
     position: relative;
-    width: 1026px;  /* 9 * 114 = piece table width */
+    width: 1140px;  /* 1026 + 57*2 = piece table + half cell on each side */
+    height: 1254px; /* 1140 + 57*2 = piece table height + half cell top/bottom */
     margin: 0 auto;
-    padding: 57px 0; /* half cell padding so grid lines aren't cut off */
+    padding: 0;
+}
+
+/* --- Piece table (transparent, on top) --- */
+/* At top:57px, left:57px = half cell offset from container edge.
+   Each cell center = one intersection point. */
+.piece-table {
+    border-collapse: collapse;
+    position: absolute;
+    top: 57px;
+    left: 57px;
+    z-index: 3;
 }
 
 /* --- Grid table (visible lines) --- */
-/* Positioned absolutely, shifted by half cell (57px) so grid lines
-   align with piece table cell centers (intersections). */
+/* At top:114px, left:114px = one full cell offset from container edge
+   = half cell beyond piece table = grid lines align with piece centers. */
 .grid-table {
     border-collapse: collapse;
     background: #f5edd6;
     position: absolute;
-    top: 57px;    /* half cell down from container top */
-    left: 57px;   /* half cell right from container left */
+    top: 114px;   /* 57 (piece offset) + 57 (half cell) = 114 */
+    left: 114px;  /* 57 (piece offset) + 57 (half cell) = 114 */
     z-index: 1;
     border: 2px solid #000; /* outer border = board edge */
 }
@@ -172,17 +186,6 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     right: -1px;
     -webkit-transform-origin: 100% 0;
     transform-origin: 100% 0;
-}
-
-/* --- Piece table (transparent, on top) --- */
-/* Positioned absolutely at top-left of container, no offset.
-   Each cell center = one intersection point. */
-.piece-table {
-    border-collapse: collapse;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 3;
 }
 
 .pcell {
