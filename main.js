@@ -141,7 +141,7 @@
                 var content = '';
 
                 /* River text in the middle rows */
-                if (displayRow === 4 && file === 1) {
+                if (displayRow === 4 && file === 2) {
                     content += '<span class="river-text">楚 河</span>';
                 } else if (displayRow === 4 && file === 6) {
                     content += '<span class="river-text">漢 界</span>';
