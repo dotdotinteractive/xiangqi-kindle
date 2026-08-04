@@ -13,71 +13,71 @@
 
 var Engine = function() {
     // engine version
-    const VERSION = '1.0';
+    var VERSION = '1.0';
     
     // starting position
-    const START_FEN = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1';
+    var START_FEN = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1';
     
     // sides to move
-    const RED = 0;
-    const BLACK = 1;
-    const NO_COLOR = 2;
+    var RED = 0;
+    var BLACK = 1;
+    var NO_COLOR = 2;
     
     // piece encoding
-    const EMPTY = 0;
-    const RED_PAWN = 1;
-    const RED_ADVISOR = 2;
-    const RED_BISHOP = 3;
-    const RED_KNIGHT = 4;
-    const RED_CANNON = 5;
-    const RED_ROOK = 6;
-    const RED_KING = 7;
-    const BLACK_PAWN = 8;
-    const BLACK_ADVISOR = 9;
-    const BLACK_BISHOP = 10;
-    const BLACK_KNIGHT = 11;
-    const BLACK_CANNON = 12;
-    const BLACK_ROOK = 13;
-    const BLACK_KING = 14;
-    const OFFBOARD = 15;
+    var EMPTY = 0;
+    var RED_PAWN = 1;
+    var RED_ADVISOR = 2;
+    var RED_BISHOP = 3;
+    var RED_KNIGHT = 4;
+    var RED_CANNON = 5;
+    var RED_ROOK = 6;
+    var RED_KING = 7;
+    var BLACK_PAWN = 8;
+    var BLACK_ADVISOR = 9;
+    var BLACK_BISHOP = 10;
+    var BLACK_KNIGHT = 11;
+    var BLACK_CANNON = 12;
+    var BLACK_ROOK = 13;
+    var BLACK_KING = 14;
+    var OFFBOARD = 15;
     
     // piece types
-    const PAWN = 16;
-    const ADVISOR = 17;
-    const BISHOP = 18;
-    const KNIGHT = 19;
-    const CANNON = 20;
-    const ROOK = 21;
-    const KING = 22;
+    var PAWN = 16;
+    var ADVISOR = 17;
+    var BISHOP = 18;
+    var KNIGHT = 19;
+    var CANNON = 20;
+    var ROOK = 21;
+    var KING = 22;
     
     // map type to piece
-    const PIECE_TYPE = [
+    var PIECE_TYPE = [
       0, 
       PAWN, ADVISOR, BISHOP, KNIGHT, CANNON, ROOK, KING,
       PAWN, ADVISOR, BISHOP, KNIGHT, CANNON, ROOK, KING
     ];
     
     // map color to piece
-    const PIECE_COLOR = [
+    var PIECE_COLOR = [
       NO_COLOR,
       RED, RED, RED, RED, RED, RED, RED,
       BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK
     ];  
     
     // square encoding
-    const A9 = 23, B9 = 24, C9 = 25, D9 = 26, E9 = 27, F9 = 28, G9 = 29, H9 = 30, I9 = 31;
-    const A8 = 34, B8 = 35, C8 = 36, D8 = 37, E8 = 38, F8 = 39, G8 = 40, H8 = 41, I8 = 42;
-    const A7 = 45, B7 = 46, C7 = 47, D7 = 48, E7 = 49, F7 = 50, G7 = 51, H7 = 52, I7 = 53;
-    const A6 = 56, B6 = 57, C6 = 58, D6 = 59, E6 = 60, F6 = 61, G6 = 62, H6 = 63, I6 = 64;
-    const A5 = 67, B5 = 68, C5 = 69, D5 = 70, E5 = 71, F5 = 72, G5 = 73, H5 = 74, I5 = 75;
-    const A4 = 78, B4 = 79, C4 = 80, D4 = 81, E4 = 82, F4 = 83, G4 = 84, H4 = 85, I4 = 86;
-    const A3 = 89, B3 = 90, C3 = 91, D3 = 92, E3 = 93, F3 = 94, G3 = 95, H3 = 96, I3 = 97;
-    const A2 = 100, B2 = 101, C2 = 102, D2 = 103, E2 = 104, F2 = 105, G2 = 106, H2 = 107, I2 = 108;
-    const A1 = 111, B1 = 112, C1 = 113, D1 = 114, E1 = 115, F1 = 116, G1 = 117, H1 = 118, I1 = 119;
-    const A0 = 122, B0 = 123, C0 = 124, D0 = 125, E0 = 126, F0 = 127, G0 = 128, H0 = 129, I0 = 130;
+    var A9 = 23, B9 = 24, C9 = 25, D9 = 26, E9 = 27, F9 = 28, G9 = 29, H9 = 30, I9 = 31;
+    var A8 = 34, B8 = 35, C8 = 36, D8 = 37, E8 = 38, F8 = 39, G8 = 40, H8 = 41, I8 = 42;
+    var A7 = 45, B7 = 46, C7 = 47, D7 = 48, E7 = 49, F7 = 50, G7 = 51, H7 = 52, I7 = 53;
+    var A6 = 56, B6 = 57, C6 = 58, D6 = 59, E6 = 60, F6 = 61, G6 = 62, H6 = 63, I6 = 64;
+    var A5 = 67, B5 = 68, C5 = 69, D5 = 70, E5 = 71, F5 = 72, G5 = 73, H5 = 74, I5 = 75;
+    var A4 = 78, B4 = 79, C4 = 80, D4 = 81, E4 = 82, F4 = 83, G4 = 84, H4 = 85, I4 = 86;
+    var A3 = 89, B3 = 90, C3 = 91, D3 = 92, E3 = 93, F3 = 94, G3 = 95, H3 = 96, I3 = 97;
+    var A2 = 100, B2 = 101, C2 = 102, D2 = 103, E2 = 104, F2 = 105, G2 = 106, H2 = 107, I2 = 108;
+    var A1 = 111, B1 = 112, C1 = 113, D1 = 114, E1 = 115, F1 = 116, G1 = 117, H1 = 118, I1 = 119;
+    var A0 = 122, B0 = 123, C0 = 124, D0 = 125, E0 = 126, F0 = 127, G0 = 128, H0 = 129, I0 = 130;
     
     // array to convert board square indices to coordinates
-    const COORDINATES = [
+    var COORDINATES = [
       'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 
       'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 'xx', 
       'xx', 'a9', 'b9', 'c9', 'd9', 'e9', 'f9', 'g9', 'h9', 'i9', 'xx', 
@@ -166,9 +166,9 @@ var Engine = function() {
     // reset board array and game state variables
     function resetBoard() {
       // reset board position
-      for (let rank = 0; rank < 14; rank++) {
-        for (let file = 0; file < 11; file++) {
-          let square = rank * 11 + file;
+      for (var rank = 0; rank < 14; rank++) {
+        for (var file = 0; file < 11; file++) {
+          var square = rank * 11 + file;
           if (COORDINATES[square] != 'xx') board[square] = EMPTY;
           else board[square] = OFFBOARD;
         }
@@ -186,7 +186,7 @@ var Engine = function() {
       gamePly = 0;
       
       // reset repetition table
-      for (let index in repetitionTable) repetitionTable[index] = 0;
+      for (var index in repetitionTable) repetitionTable[index] = 0;
     }
     
     /****************************\
@@ -239,7 +239,7 @@ var Engine = function() {
       // hash board position
       for (var square = 0; square < board.length; square++) {
         if (board[square] != OFFBOARD) {
-          let piece = board[square];
+          var piece = board[square];
           if (piece != EMPTY) finalKey ^= pieceKeys[(piece * board.length) + square];
         }
       }
@@ -260,7 +260,7 @@ var Engine = function() {
     \****************************/
     
     // encode ascii pieces
-    const CHAR_TO_PIECE = {
+    var CHAR_TO_PIECE = {
       'P': RED_PAWN,
       'A': RED_ADVISOR,
       'B': RED_BISHOP, 'E': RED_BISHOP,
@@ -278,7 +278,7 @@ var Engine = function() {
     };
   
     // ascii character piece representation
-    const PIECE_TO_CHAR = ['.', 'P', 'A', 'B', 'N', 'C', 'R', 'K', 'p', 'a', 'b', 'n', 'c', 'r', 'k'];
+    var PIECE_TO_CHAR = ['.', 'P', 'A', 'B', 'N', 'C', 'R', 'K', 'p', 'a', 'b', 'n', 'c', 'r', 'k'];
     
     // set board position from FEN string
     function setBoard(fen) {
@@ -286,9 +286,9 @@ var Engine = function() {
       var index = 0;
       
       // parse position
-      for (let rank = 0; rank < 14; rank++) {
-        for (let file = 0; file < 11; file++) {
-          let square = rank * 11 + file;
+      for (var rank = 0; rank < 14; rank++) {
+        for (var file = 0; file < 11; file++) {
+          var square = rank * 11 + file;
           
           if (board[square] != OFFBOARD) {
             // parse pieces
@@ -328,12 +328,12 @@ var Engine = function() {
     
     // print board to console
     function printBoard() {
-      let boardString = '';
+      var boardString = '';
       
       // print board position
-      for (let rank = 0; rank < 14; rank++) {
-        for (let file = 0; file < 11; file++) {
-          let square = rank * 11 + file;
+      for (var rank = 0; rank < 14; rank++) {
+        for (var file = 0; file < 11; file++) {
+          var square = rank * 11 + file;
 
           if (board[square] != OFFBOARD) {
             if (file == 1) boardString += 11 - rank + '  ';
@@ -356,7 +356,7 @@ var Engine = function() {
     
     // validate move
     function moveFromString(moveString) {
-      let moveList = generateMoves(ALL_MOVES);
+      var moveList = generateMoves(ALL_MOVES);
 
       // parse move string
       var sourceSquare = (11 - (moveString[1].charCodeAt() - '0'.charCodeAt())) * 11 + (moveString[0].charCodeAt() - 'a'.charCodeAt() + 1);
@@ -381,20 +381,20 @@ var Engine = function() {
     function loadMoves(moves) {
       moves = moves.split(' ');
       
-      for (let index = 0; index < moves.length; index++) {
-        let move = moves[index];
-        let moveString = moves[index];
-        let validMove = moveFromString(move);
+      for (var index = 0; index < moves.length; index++) {
+        var move = moves[index];
+        var moveString = moves[index];
+        var validMove = moveFromString(move);
 
         if (validMove) {
           makeMove(validMove);
 
           if (typeof(document) != 'undefined') {
             try {
-              let pv = ''
-              let time = 0;
-              let score = 0;
-              let depth = 0;
+              var pv = ''
+              var time = 0;
+              var score = 0;
+              var depth = 0;
               
               if (userTime) {
                 time = Date.now() - userTime;
@@ -419,9 +419,9 @@ var Engine = function() {
     
     // get game moves
     function getMoves() {
-      let moves = [];
+      var moves = [];
       
-      for (let index = 0; index < moveStack.length; index++) 
+      for (var index = 0; index < moveStack.length; index++) 
         moves.push(moveToString(moveStack[index].move));
       
       return moves;
@@ -438,7 +438,7 @@ var Engine = function() {
       var listMoves = '   Move    Piece   Captured   Flag   Score\n\n';
       
       for (var index = 0; index < moveList.length; index++) {
-        let move = moveList[index].move;
+        var move = moveList[index].move;
         listMoves += '   ' + COORDINATES[getSourceSquare(move)] + COORDINATES[getTargetSquare(move)];
         listMoves += '    ' + PIECE_TO_CHAR[getSourcePiece(move)] +
                      '       ' + PIECE_TO_CHAR[getTargetPiece(move)] +
@@ -460,23 +460,23 @@ var Engine = function() {
     \****************************/
     
     // directions
-    const UP = -11;
-    const DOWN = 11;
-    const LEFT = -1;
-    const RIGHT = 1;
+    var UP = -11;
+    var DOWN = 11;
+    var LEFT = -1;
+    var RIGHT = 1;
     
     // piece move offsets
-    const ORTHOGONALS = [LEFT, RIGHT, UP, DOWN];
-    const DIAGONALS = [UP + LEFT, UP + RIGHT, DOWN + LEFT, DOWN + RIGHT];
+    var ORTHOGONALS = [LEFT, RIGHT, UP, DOWN];
+    var DIAGONALS = [UP + LEFT, UP + RIGHT, DOWN + LEFT, DOWN + RIGHT];
     
     // offsets to get attacks by pawns
-    const PAWN_ATTACK_OFFSETS = [
+    var PAWN_ATTACK_OFFSETS = [
       [DOWN, LEFT, RIGHT],
       [UP, LEFT, RIGHT]
     ];
     
     // offsets to get attacks by knights
-    const KNIGHT_ATTACK_OFFSETS = [
+    var KNIGHT_ATTACK_OFFSETS = [
       [UP + UP + LEFT, LEFT + LEFT + UP],
       [UP + UP + RIGHT, RIGHT + RIGHT + UP],
       [DOWN + DOWN + LEFT, LEFT + LEFT + DOWN],
@@ -484,13 +484,13 @@ var Engine = function() {
     ];
     
     // offsets to get attacks by pawns
-    const PAWN_MOVE_OFFSETS = [
+    var PAWN_MOVE_OFFSETS = [
       [UP, LEFT, RIGHT],
       [DOWN, LEFT, RIGHT]
     ];
     
     // offsets to get target squares for knights
-    const KNIGHT_MOVE_OFFSETS = [
+    var KNIGHT_MOVE_OFFSETS = [
       [LEFT + LEFT + UP, LEFT + LEFT + DOWN],
       [RIGHT + RIGHT + UP, RIGHT + RIGHT + DOWN],
       [UP + UP + LEFT, UP + UP + RIGHT],
@@ -498,26 +498,26 @@ var Engine = function() {
     ];
     
     // offsets to get target squares for bishops
-    const BISHOP_MOVE_OFFSETS = [(UP + LEFT) * 2, (UP + RIGHT) * 2, (DOWN + LEFT) * 2, (DOWN + RIGHT) * 2];
+    var BISHOP_MOVE_OFFSETS = [(UP + LEFT) * 2, (UP + RIGHT) * 2, (DOWN + LEFT) * 2, (DOWN + RIGHT) * 2];
     
     // square attacked by the given side
     function isSquareAttacked(square, color) {
       // by knights
-      for (let direction = 0; direction < DIAGONALS.length; direction++) {
-        let directionTarget = square + DIAGONALS[direction];
+      for (var direction = 0; direction < DIAGONALS.length; direction++) {
+        var directionTarget = square + DIAGONALS[direction];
         
         if (board[directionTarget] == EMPTY) {
-          for (let offset = 0; offset < 2; offset++) {
-            let knightTarget = square + KNIGHT_ATTACK_OFFSETS[direction][offset];
+          for (var offset = 0; offset < 2; offset++) {
+            var knightTarget = square + KNIGHT_ATTACK_OFFSETS[direction][offset];
             if (board[knightTarget] == ((color == RED) ? RED_KNIGHT : BLACK_KNIGHT)) return 1;
           }
         }
       }
       
       // by king, rooks & cannons
-      for (let direction = 0; direction < ORTHOGONALS.length; direction++) {
-        let directionTarget = square + ORTHOGONALS[direction];
-        let jumpOver = 0;
+      for (var direction = 0; direction < ORTHOGONALS.length; direction++) {
+        var directionTarget = square + ORTHOGONALS[direction];
+        var jumpOver = 0;
         
         while (board[directionTarget] != OFFBOARD) {
           if (jumpOver == 0) {
@@ -535,8 +535,8 @@ var Engine = function() {
       }
       
       // by pawns
-      for (let direction = 0; direction < PAWN_ATTACK_OFFSETS[color].length; direction++) {
-        let directionTarget = square + PAWN_ATTACK_OFFSETS[color][direction];
+      for (var direction = 0; direction < PAWN_ATTACK_OFFSETS[color].length; direction++) {
+        var directionTarget = square + PAWN_ATTACK_OFFSETS[color][direction];
         if (board[directionTarget] == ((color == RED) ? RED_PAWN : BLACK_PAWN)) return 1;
       }
       
@@ -553,7 +553,7 @@ var Engine = function() {
     \****************************/
     
     // zones of xiangqi board
-    const BOARD_ZONES = [
+    var BOARD_ZONES = [
       [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -616,7 +616,7 @@ var Engine = function() {
     // push move into move list
     function pushMove(moveList, sourceSquare, targetSquare, sourcePiece, targetPiece, onlyCaptures) {
       if (targetPiece == EMPTY || PIECE_COLOR[targetPiece] == side ^ 1) {
-        let move = 0;
+        var move = 0;
         
         if (targetPiece) move = encodeMove(sourceSquare, targetSquare, sourcePiece, targetPiece, 1);
         else {
@@ -624,7 +624,7 @@ var Engine = function() {
             move = encodeMove(sourceSquare, targetSquare, sourcePiece, targetPiece, 0);
         }
 
-        let moveScore = 0;
+        var moveScore = 0;
         
         if (getCaptureFlag(move)) {
           moveScore = MVV_LVA[board[getSourceSquare(move)] * 15 + board[getTargetSquare(move)]];
@@ -646,20 +646,20 @@ var Engine = function() {
     
     // generate pseudo legal moves
     function generateMoves(onlyCaptures) {
-      let moveList = [];
+      var moveList = [];
       
-      for (let sourceSquare = 0; sourceSquare < board.length; sourceSquare++) {
+      for (var sourceSquare = 0; sourceSquare < board.length; sourceSquare++) {
         if (board[sourceSquare] != OFFBOARD) {
-          let piece = board[sourceSquare];
-          let pieceType = PIECE_TYPE[piece];
-          let pieceColor = PIECE_COLOR[piece];
+          var piece = board[sourceSquare];
+          var pieceType = PIECE_TYPE[piece];
+          var pieceColor = PIECE_COLOR[piece];
           
           if (pieceColor == side) {
             // pawns
             if (pieceType == PAWN) {
-              for (let direction = 0; direction < PAWN_MOVE_OFFSETS[side].length; direction++) {
-                let targetSquare = sourceSquare + PAWN_MOVE_OFFSETS[side][direction];
-                let targetPiece = board[targetSquare];
+              for (var direction = 0; direction < PAWN_MOVE_OFFSETS[side].length; direction++) {
+                var targetSquare = sourceSquare + PAWN_MOVE_OFFSETS[side][direction];
+                var targetPiece = board[targetSquare];
                 
                 if (targetPiece != OFFBOARD) pushMove(moveList, sourceSquare, targetSquare, board[sourceSquare], targetPiece, onlyCaptures);
                 if (BOARD_ZONES[side][sourceSquare]) break; 
@@ -668,10 +668,10 @@ var Engine = function() {
             
             // kings & advisors
             if (pieceType == KING || pieceType == ADVISOR) {
-              for (let direction = 0; direction < ORTHOGONALS.length; direction++) {
-                let offsets = (pieceType == KING) ? ORTHOGONALS : DIAGONALS;
-                let targetSquare = sourceSquare + offsets[direction];
-                let targetPiece = board[targetSquare];
+              for (var direction = 0; direction < ORTHOGONALS.length; direction++) {
+                var offsets = (pieceType == KING) ? ORTHOGONALS : DIAGONALS;
+                var targetSquare = sourceSquare + offsets[direction];
+                var targetPiece = board[targetSquare];
                 
                 if (BOARD_ZONES[side][targetSquare] == 2) pushMove(moveList, sourceSquare, targetSquare, board[sourceSquare], targetPiece, onlyCaptures);
               }
@@ -679,10 +679,10 @@ var Engine = function() {
             
             // bishops
             if (pieceType == BISHOP) {
-              for (let direction = 0; direction < BISHOP_MOVE_OFFSETS.length; direction++) {
-                let targetSquare = sourceSquare + BISHOP_MOVE_OFFSETS[direction];
-                let jumpOver = sourceSquare + DIAGONALS[direction];
-                let targetPiece = board[targetSquare];
+              for (var direction = 0; direction < BISHOP_MOVE_OFFSETS.length; direction++) {
+                var targetSquare = sourceSquare + BISHOP_MOVE_OFFSETS[direction];
+                var jumpOver = sourceSquare + DIAGONALS[direction];
+                var targetPiece = board[targetSquare];
                 
                 if (BOARD_ZONES[side][targetSquare] && board[jumpOver] == EMPTY) pushMove(moveList, sourceSquare, targetSquare, board[sourceSquare], targetPiece, onlyCaptures);
               }
@@ -690,13 +690,13 @@ var Engine = function() {
             
             // knights
             if (pieceType == KNIGHT) {
-              for (let direction = 0; direction < ORTHOGONALS.length; direction++) {
-                let targetDirection = sourceSquare + ORTHOGONALS[direction];
+              for (var direction = 0; direction < ORTHOGONALS.length; direction++) {
+                var targetDirection = sourceSquare + ORTHOGONALS[direction];
           
                 if (board[targetDirection] == EMPTY) {
-                  for (let offset = 0; offset < 2; offset++) {
-                    let targetSquare = sourceSquare + KNIGHT_MOVE_OFFSETS[direction][offset];
-                    let targetPiece = board[targetSquare];
+                  for (var offset = 0; offset < 2; offset++) {
+                    var targetSquare = sourceSquare + KNIGHT_MOVE_OFFSETS[direction][offset];
+                    var targetPiece = board[targetSquare];
                     
                     if (targetPiece != OFFBOARD) pushMove(moveList, sourceSquare, targetSquare, board[sourceSquare], targetPiece, onlyCaptures);
                   }
@@ -706,12 +706,12 @@ var Engine = function() {
             
             // rooks & cannons
             if (pieceType == ROOK || pieceType == CANNON) {
-              for (let direction = 0; direction < ORTHOGONALS.length; direction++) {
-                let targetSquare = sourceSquare + ORTHOGONALS[direction];
-                let jumpOver = 0;
+              for (var direction = 0; direction < ORTHOGONALS.length; direction++) {
+                var targetSquare = sourceSquare + ORTHOGONALS[direction];
+                var jumpOver = 0;
                 
                 while (board[targetSquare] != OFFBOARD) {
-                  let targetPiece = board[targetSquare];
+                  var targetPiece = board[targetSquare];
                   
                   if (jumpOver == 0) {
                     // all rook moves
@@ -743,10 +743,10 @@ var Engine = function() {
     
     // generate only legal moves
     function generateLegalMoves() {
-      let legalMoves = [];
-      let moveList = generateMoves(ALL_MOVES);
+      var legalMoves = [];
+      var moveList = generateMoves(ALL_MOVES);
 
-      for (let count = 0; count < moveList.length; count++) {
+      for (var count = 0; count < moveList.length; count++) {
         if (makeMove(moveList[count].move) == 0) continue;
         legalMoves.push(moveList[count]);
         takeBack();
@@ -781,11 +781,11 @@ var Engine = function() {
       });
       
       // parse move
-      let sourceSquare = getSourceSquare(move);
-      let targetSquare = getTargetSquare(move);
-      let sourcePiece = getSourcePiece(move);
-      let targetPiece = getTargetPiece(move);
-      let captureFlag = getCaptureFlag(move);
+      var sourceSquare = getSourceSquare(move);
+      var targetSquare = getTargetSquare(move);
+      var sourcePiece = getSourcePiece(move);
+      var targetPiece = getTargetPiece(move);
+      var captureFlag = getCaptureFlag(move);
 
       // move piece
       board[targetSquare] = sourcePiece;
@@ -823,12 +823,12 @@ var Engine = function() {
       gamePly--;
     
       // parse move
-      let moveIndex = moveStack.length - 1;
-      let move = moveStack[moveIndex].move;    
-      let sourceSquare = getSourceSquare(move);
-      let targetSquare = getTargetSquare(move);
-      let sourcePiece = getSourcePiece(move);
-      let targetPiece = getTargetPiece(move);
+      var moveIndex = moveStack.length - 1;
+      var move = moveStack[moveIndex].move;    
+      var sourceSquare = getSourceSquare(move);
+      var targetSquare = getTargetSquare(move);
+      var sourcePiece = getSourcePiece(move);
+      var targetPiece = getTargetPiece(move);
       
       // move piece
       board[sourceSquare] = sourcePiece;
@@ -907,7 +907,7 @@ var Engine = function() {
     function perftDriver(depth) {
       if  (depth == 0) { nodes++; return; }
       
-      let moveList = generateMoves(ALL_MOVES);
+      var moveList = generateMoves(ALL_MOVES);
       
       for (var count = 0; count < moveList.length; count++) {      
         if (!makeMove(moveList[count].move)) continue;
@@ -921,16 +921,16 @@ var Engine = function() {
       nodes = 0;
       console.log('   Performance test:\n');
       resultString = '';
-      let startTime = Date.now();
+      var startTime = Date.now();
       
-      let moveList = generateMoves(ALL_MOVES);
+      var moveList = generateMoves(ALL_MOVES);
       
       for (var count = 0; count < moveList.length; count++) {
         if (makeMove(moveList[count].move) == 0) continue;
-        let cumNodes = nodes;
+        var cumNodes = nodes;
         perftDriver(depth - 1);
         takeBack();
-        let oldNodes = nodes - cumNodes;
+        var oldNodes = nodes - cumNodes;
         console.log(  '   move' +
                       ' ' + (count + 1) + ((count < 9) ? ':  ': ': ') +
                       COORDINATES[getSourceSquare(moveList[count].move)] +
@@ -965,10 +965,10 @@ var Engine = function() {
     */
     
     // evaluate types       P  A  B  N  C  R  K 
-    const EVALUATE_TYPES = [1, 0, 0, 1, 1, 1, 0];
+    var EVALUATE_TYPES = [1, 0, 0, 1, 1, 1, 0];
 
     // material weights
-    const MATERIAL_WEIGHTS = [
+    var MATERIAL_WEIGHTS = [
       //  P     A     B     N     C     R      K   
       0, 30,  120,  120,  270,  285,  600,  6000,
       
@@ -977,7 +977,7 @@ var Engine = function() {
     ];
 
     // piece square tables
-    const PST = [
+    var PST = [
       // pawns
       [
         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -1058,7 +1058,7 @@ var Engine = function() {
     ];
     
     // mirror square for black
-    const MIRROR_SQUARE = [
+    var MIRROR_SQUARE = [
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,  A0,  B0,  C0,  D0,  E0,  F0,  G0,  H0,  I0,   0,
@@ -1077,14 +1077,14 @@ var Engine = function() {
     
     // static evaluation
     function evaluate() {
-      let score = 0;
+      var score = 0;
       
-      for (let square = 0; square < board.length; square++) {
+      for (var square = 0; square < board.length; square++) {
         if (board[square] != OFFBOARD) {
           if (board[square]) {
-            let piece = board[square];
-            let pstIndex = PIECE_TYPE[piece] - 16;
-            let pieceColor = PIECE_COLOR[piece];
+            var piece = board[square];
+            var pstIndex = PIECE_TYPE[piece] - 16;
+            var pieceColor = PIECE_COLOR[piece];
             
             // material score
             score += MATERIAL_WEIGHTS[piece];
@@ -1111,15 +1111,15 @@ var Engine = function() {
     \****************************/
     
     // 16Mb default hash table size
-    var hashEntries = 100000;
+    var hashEntries = 20000;
 
     // no hash entry found constant
-    const NO_HASH = 100000;
+    var NO_HASH = 100000;
 
     // transposition table hash flags
-    const HASH_EXACT = 0;
-    const HASH_ALPHA = 1;
-    const HASH_BETA = 2;
+    var HASH_EXACT = 0;
+    var HASH_ALPHA = 1;
+    var HASH_BETA = 2;
 
     // define TT instance
     var hashTable = [];
@@ -1213,7 +1213,7 @@ var Engine = function() {
     var nodes = 0;
     
     // most valuable victim least valuable attacker, e.g. Pxr == 606, Rxp = 
-    const MVV_LVA = [
+    var MVV_LVA = [
 	    0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,
 	    0,   0,   0,   0,   0,   0,   0,   0,  106, 206, 306, 406, 506, 606, 706,
 	    0,   0,   0,   0,   0,   0,   0,   0,  105, 205, 305, 405, 505, 605, 705,
@@ -1233,14 +1233,14 @@ var Engine = function() {
     ];
     
     // search  constants
-    const MAX_PLY = 64;
-    const INFINITY = 50000;
-    const MATE_VALUE = 49000;
-    const MATE_SCORE = 48000;
-    const DO_NULL = 1;
-    const NO_NULL = 0;
-    const ALL_MOVES = 0;
-    const ONLY_CAPTURES = 1;
+    var MAX_PLY = 64;
+    var INFINITY = 50000;
+    var MATE_VALUE = 49000;
+    var MATE_SCORE = 48000;
+    var DO_NULL = 1;
+    var NO_NULL = 0;
+    var ALL_MOVES = 0;
+    var ONLY_CAPTURES = 1;
     
     // search variables
     var followPv;
@@ -1285,10 +1285,10 @@ var Engine = function() {
       timing.stopped = 0;
       searchPly = 0;
       
-      for (let index = 0; index < pvTable.length; index++) pvTable[index] = 0;
-      for (let index = 0; index < pvLength.length; index++) pvLength[index] = 0;
-      for (let index = 0; index < killerMoves.length; index++) killerMoves[index] = 0;
-      for (let index = 0; index < historyMoves.length; index++) historyMoves[index] = 0;
+      for (var index = 0; index < pvTable.length; index++) pvTable[index] = 0;
+      for (var index = 0; index < pvLength.length; index++) pvLength[index] = 0;
+      for (var index = 0; index < killerMoves.length; index++) killerMoves[index] = 0;
+      for (var index = 0; index < historyMoves.length; index++) historyMoves[index] = 0;
     }
     
     // handle time control
@@ -1298,7 +1298,7 @@ var Engine = function() {
 
     // position repetition detection
     function isRepetition() {
-      for (let index = 0; index < gamePly; index++)
+      for (var index = 0; index < gamePly; index++)
         if (repetitionTable[index] == hashKey) return 1;
 
       return 0;
@@ -1306,9 +1306,9 @@ var Engine = function() {
     
     // move ordering
     function sortMoves(currentCount, moveList) {
-      for (let nextCount = currentCount + 1; nextCount < moveList.length; nextCount++) {
+      for (var nextCount = currentCount + 1; nextCount < moveList.length; nextCount++) {
         if (moveList[currentCount].score < moveList[nextCount].score) {
-          let tempMove = moveList[currentCount];
+          var tempMove = moveList[currentCount];
 
           moveList[currentCount] = moveList[nextCount];
           moveList[nextCount] = tempMove;
@@ -1319,7 +1319,7 @@ var Engine = function() {
     // sort PV move
     function sortPvMove(moveList, bestMove) {
       // sort hash table move
-      for (let count = 0; count < moveList.length; count++) {
+      for (var count = 0; count < moveList.length; count++) {
         if (moveList[count].move == bestMove.value) {
           moveList[count].score = 30000;
           return;
@@ -1329,7 +1329,7 @@ var Engine = function() {
       // sort PV move
       if (searchPly && followPv) {
         followPv = 0;
-        for (let count = 0; count < moveList.length; count++) {
+        for (var count = 0; count < moveList.length; count++) {
           if (moveList[count].move == pvTable[searchPly]) {
             followPv = 1;
             moveList[count].score = 20000;
@@ -1359,7 +1359,7 @@ var Engine = function() {
 
       if (searchPly > MAX_PLY - 1) return evaluate();
 
-      let evaluation = evaluate();
+      var evaluation = evaluate();
       
       if (evaluation >= beta) return beta;
       if (evaluation > alpha) alpha = evaluation;
@@ -1372,7 +1372,7 @@ var Engine = function() {
       // loop over moves
       for (var count = 0; count < moveList.length; count++) { 
         sortMoves(count, moveList)
-        let move = moveList[count].move;
+        var move = moveList[count].move;
         
         if (makeMove(move) == 0) continue;
         var score = -quiescence(-beta, -alpha);
@@ -1397,9 +1397,9 @@ var Engine = function() {
       // best move for TT
       var bestMove = { value: 0 };
       var hashFlag = HASH_ALPHA;
-      let score = 0;
-      let pvNode = beta - alpha > 1;
-      let futilityPruning = 0;
+      var score = 0;
+      var pvNode = beta - alpha > 1;
+      var futilityPruning = 0;
       
       // read hash entry
       if (searchPly && 
@@ -1421,19 +1421,19 @@ var Engine = function() {
       if (beta > MATE_VALUE - 1) beta = MATE_VALUE - 1;
       if (alpha >= beta) return alpha;
       
-      let legalMoves = 0;
-      let inCheck = isSquareAttacked(kingSquare[side], side ^ 1);
+      var legalMoves = 0;
+      var inCheck = isSquareAttacked(kingSquare[side], side ^ 1);
       
       // check extension
       if (inCheck) depth++;
       
       if (inCheck == 0 && pvNode == 0) {
         // static evaluation for pruning purposes
-        let staticEval = evaluate();
+        var staticEval = evaluate();
       
         // evalution pruning
         if (depth < 3 && Math.abs(beta - 1) > -MATE_VALUE + 100) {
-          let evalMargin = MATERIAL_WEIGHTS[RED_PAWN] * depth;
+          var evalMargin = MATERIAL_WEIGHTS[RED_PAWN] * depth;
           if (staticEval - evalMargin >= beta) return staticEval - evalMargin;
         }
         
@@ -1450,7 +1450,7 @@ var Engine = function() {
           
           // razoring
           score = staticEval + MATERIAL_WEIGHTS[RED_PAWN];
-          let newScore;
+          var newScore;
           
           if (score < beta) {
             if (depth == 1) {
@@ -1468,7 +1468,7 @@ var Engine = function() {
         }
         
         // futility pruning condition
-        let futilityMargin = [
+        var futilityMargin = [
           0, MATERIAL_WEIGHTS[RED_PAWN], MATERIAL_WEIGHTS[RED_KNIGHT], MATERIAL_WEIGHTS[RED_CANNON]
         ];
         
@@ -1476,16 +1476,16 @@ var Engine = function() {
           futilityPruning = 1;
       }
 
-      let movesSearched = 0;
-      let moveList = generateMoves(ALL_MOVES);
+      var movesSearched = 0;
+      var moveList = generateMoves(ALL_MOVES);
       
       // sort PV move
       sortPvMove(moveList, bestMove);
       
       // loop over moves
-      for (let count = 0; count < moveList.length; count++) {
+      for (var count = 0; count < moveList.length; count++) {
         sortMoves(count, moveList);
-        let move = moveList[count].move;
+        var move = moveList[count].move;
         if (makeMove(move) == 0) continue;
         legalMoves++;
         
@@ -1560,14 +1560,14 @@ var Engine = function() {
     
     // search position for the best move
     function searchPosition(depth) {
-      let start = Date.now();
-      let score = 0;
-      let lastBestMove = 0;
+      var start = Date.now();
+      var score = 0;
+      var lastBestMove = 0;
       
       clearSearch();
 
       // iterative deepening
-      for (let currentDepth = 1; currentDepth <= depth; currentDepth++) {
+      for (var currentDepth = 1; currentDepth <= depth; currentDepth++) {
         lastBestMove = pvTable[0];
         followPv = 1;
         score = negamax(-INFINITY, INFINITY, currentDepth, DO_NULL);
@@ -1577,7 +1577,7 @@ var Engine = function() {
            ((Date.now() > timing.stopTime) &&
             timing.time != -1)) break;
         
-        let info = '';
+        var info = '';
         
         if (typeof(document) != 'undefined')
           var uciScore = 0;
@@ -1611,7 +1611,7 @@ var Engine = function() {
             uciScore = -score;
         }
         
-        for (let count = 0; count < pvLength[0]; count++)
+        for (var count = 0; count < pvLength[0]; count++)
           info += moveToString(pvTable[count]) + ' ';
                   
         console.log(info);
@@ -1627,7 +1627,7 @@ var Engine = function() {
         if (info.indexOf('mate') !== -1 || info.indexOf('-49000') !== -1) break;
       }
 
-      let bestMove = (timing.stopped == 1) ? lastBestMove: pvTable[0];
+      var bestMove = (timing.stopped == 1) ? lastBestMove: pvTable[0];
       console.log('bestmove ' + moveToString(bestMove));
       return bestMove;
     }
