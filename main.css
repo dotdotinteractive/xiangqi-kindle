@@ -310,6 +310,11 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 /* Error log */
 #error-log {
     color: #c00;
-    font-size: 0.8em;
-    padding: 4px;
+    font-size: 0.9em;
+    padding: 8px;
+    border: 2px solid #c00;
+    margin: 8px;
+    background: #ffe;
+    min-height: 20px;
+    display: block !important;
 }

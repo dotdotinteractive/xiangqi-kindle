@@ -9,7 +9,18 @@
            var console = { log: function() {}, error: function() {}, warn: function() {}, info: function() {} };
        }
     </script>
+    <script type="text/javascript">
+       // Inline test: write to error-log immediately to confirm JS works
+       function xqLog(msg) {
+           var el = document.getElementById('error-log');
+           if (el) el.innerHTML += msg + '<br>';
+       }
+    </script>
     <script type="text/javascript" src="assets/wukong.js"></script>
+    <script type="text/javascript">
+       // Check if engine loaded
+       xqLog('Engine type: ' + typeof Engine);
+    </script>
 </head>
 <body>
     <div id="game-container">
@@ -56,9 +67,19 @@
             </div>
         </div>
 
-        <div id="error-log"></div>
+        <div id="error-log">JS not started</div>
     </div>
 
+    <script type="text/javascript">
+       // Inline test before main.js loads
+       xqLog('Inline JS before main.js works');
+       var testBtn = document.getElementById('diff-easy-btn');
+       xqLog('Easy button found: ' + !!testBtn);
+       if (testBtn) {
+           testBtn.className = 'diff-btn selected';
+           xqLog('Easy button highlighted inline');
+       }
+    </script>
     <script type="text/javascript" src="main.js"></script>
 </body>
 </html>
