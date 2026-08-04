@@ -130,19 +130,25 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     border-bottom: 2px solid #000;
 }
 
-/* First column: draw left border (left edge of board) */
+/* First column: draw left border (1st vertical line = left edge) */
 #xiangqiboard td.col0 {
     border-left: 2px solid #000;
 }
 
-/* First row: draw top border (top edge of board) */
+/* First row: draw top border (1st horizontal line = top edge) */
 #xiangqiboard td.row0 {
     border-top: 2px solid #000;
 }
 
-/* Last column: no right border (already drawn by table edge via col0 of next... 
-   actually we need the right edge. Keep border-right on col8 = right edge. */
-/* Last row: keep border-bottom = bottom edge. */
+/* Last column: NO right border (col7's border-right already draws the 9th vertical line) */
+#xiangqiboard td.col8 {
+    border-right: none;
+}
+
+/* Last row: NO bottom border (row8's border-bottom already draws the 10th horizontal line) */
+#xiangqiboard td.row9 {
+    border-bottom: none;
+}
 
 /* River: row 4 has no bottom border (gap between row 4 and 5) */
 #xiangqiboard td.row4 {
