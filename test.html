@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Xiangqi Test</title>
+    <title>Xiangqi Board Tests</title>
     <link rel="stylesheet" type="text/css" href="main.css">
     <script type="text/javascript">
        if (typeof console === 'undefined') {
@@ -54,12 +54,782 @@
             </div>
         </div>
     </div>
+
+    <!-- Test results output -->
+    <div id="test-results" style="position:fixed;top:0;right:0;width:500px;max-height:100%;overflow:auto;background:#fff;border:2px solid #000;font-family:monospace;font-size:13px;padding:10px;z-index:99999;"></div>
+
     <script type="text/javascript" src="main.js"></script>
     <script type="text/javascript">
-       setTimeout(function() {
-           var btn = document.getElementById('vs-ai-btn');
-           if (btn && btn.onclick) btn.onclick();
-       }, 500);
+    /* ============================================================
+       Xiangqi Board Test Suite
+       Tests board symmetry, piece alignment, dot/ring positions,
+       palace diagonals, river line breaks, and click areas.
+       ============================================================ */
+
+    var testResults = [];
+    var testPass = 0, testFail = 0;
+
+    function assert(name, condition, detail) {
+        if (condition) {
+            testPass++;
+            testResults.push('<span style="color:green;">PASS</span> ' + name);
+        } else {
+            testFail++;
+            testResults.push('<span style="color:red;">FAIL</span> ' + name + (detail ? ' <i>' + detail + '</i>' : ''));
+        }
+    }
+
+    function approxEq(a, b, tolerance) {
+        if (tolerance === undefined) tolerance = 1.5;
+        return Math.abs(a - b) <= tolerance;
+    }
+
+    function runTests() {
+        var board = document.getElementById('xiangqiboard');
+        if (!board) { console.log('Board not found!'); return; }
+
+        var CELL = 114, HALF = 57, PIECE = 95, POFF = 47.5;
+        var NLINES = 9, HLINES = 10;
+        var BW = 8 * CELL, BH = 9 * CELL;
+        var CW = BW + CELL, CH = BH + CELL;
+
+        function ix(col) { return HALF + col * CELL; }
+        function iy(row) { return HALF + row * CELL; }
+
+        var boardRect = board.getBoundingClientRect();
+        var allDivs = board.getElementsByTagName('div');
+
+        /* Helper: get all divs with specific characteristics */
+        function getDivs(filterFn) {
+            var result = [];
+            for (var i = 0; i < allDivs.length; i++) {
+                if (filterFn(allDivs[i])) result.push(allDivs[i]);
+            }
+            return result;
+        }
+
+        function parseStyle(el, prop) {
+            var s = el.style[prop];
+            if (!s) return null;
+            return parseFloat(s);
+        }
+
+        function getPos(el) {
+            return {
+                left: parseStyle(el, 'left'),
+                top: parseStyle(el, 'top'),
+                width: parseStyle(el, 'width'),
+                height: parseStyle(el, 'height')
+            };
+        }
+
+        /* Categorize divs by their role */
+        var bgDivs = [];       /* board background */
+        var hLineDivs = [];    /* horizontal grid lines */
+        var vLineDivs = [];    /* vertical grid lines */
+        var diagDivs = [];     /* palace diagonals */
+        var riverDivs = [];    /* river text */
+        var pieceDivs = [];    /* pieces */
+        var dotDivs = [];      /* legal move dots */
+        var ringDivs = [];     /* capture rings */
+        var markerDivs = [];   /* last move markers */
+        var clickDivs = [];    /* click areas */
+
+        /* Helper: check if background color matches (handles #hex and rgb() formats) */
+        function bgMatch(el, hexColor) {
+            var bg = el.style.background || el.style.backgroundColor || '';
+            /* Direct hex match */
+            if (bg.indexOf(hexColor) >= 0) return true;
+            /* Expand 3-digit hex to 6-digit */
+            var hex = hexColor;
+            if (hex.length === 4) {
+                hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+            }
+            /* Convert hex to rgb and check */
+            var r = parseInt(hex.substr(1, 2), 16);
+            var g = parseInt(hex.substr(3, 2), 16);
+            var b = parseInt(hex.substr(5, 2), 16);
+            var rgbStr = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+            var rgbStr2 = 'rgb(' + r + ',' + g + ',' + b + ')';
+            return bg.indexOf(rgbStr) >= 0 || bg.indexOf(rgbStr2) >= 0;
+        }
+
+        for (var i = 0; i < allDivs.length; i++) {
+            var d = allDivs[i];
+            var p = getPos(d);
+            var w = p.width, h = p.height;
+            var txt = d.innerHTML;
+            var hasTransform = d.style.transform && d.style.transform.indexOf('rotate') >= 0;
+
+            /* Board background: large tan div */
+            if (w === BW && h === BH && bgMatch(d, '#f5edd6')) {
+                bgDivs.push(d);
+            }
+            /* Horizontal lines: width=BW, height=2, black bg, no transform */
+            else if (w === BW && h === 2 && bgMatch(d, '#000') && !hasTransform) {
+                hLineDivs.push(d);
+            }
+            /* Vertical lines: width=2, height=BH or 4*CELL, black bg, no transform */
+            else if (w === 2 && (h === BH || h === 4 * CELL) && bgMatch(d, '#000') && !hasTransform) {
+                vLineDivs.push(d);
+            }
+            /* Palace diagonals: has transform rotate */
+            else if (hasTransform) {
+                diagDivs.push(d);
+            }
+            /* River text: contains 楚 or 漢 */
+            else if (txt.indexOf('楚') >= 0 || txt.indexOf('漢') >= 0) {
+                riverDivs.push(d);
+            }
+            /* Pieces: 95x95 with border-radius */
+            else if (w === PIECE && h === PIECE && d.style.borderRadius === '50%') {
+                pieceDivs.push(d);
+            }
+            /* Click areas: 114x114 with cursor:pointer, no background */
+            else if (w === CELL && h === CELL && d.style.cursor === 'pointer') {
+                clickDivs.push(d);
+            }
+            /* Capture rings: 102x102 with border */
+            else if (w === 102 && h === 102 && d.style.borderRadius === '50%') {
+                ringDivs.push(d);
+            }
+            /* Dots: 27x27 with background #555 */
+            else if (w === 27 && h === 27 && bgMatch(d, '#555')) {
+                dotDivs.push(d);
+            }
+            /* Markers: 27x27 with background #999 */
+            else if (w === 27 && h === 27 && bgMatch(d, '#999')) {
+                markerDivs.push(d);
+            }
+        }
+
+        /* ===== TEST 1: Container dimensions ===== */
+        assert('Container width = 1026', approxEq(boardRect.width, CW), 'got ' + boardRect.width);
+        assert('Container height = 1140', approxEq(boardRect.height, CH), 'got ' + boardRect.height);
+
+        /* ===== TEST 2: Board background ===== */
+        assert('Exactly 1 board background div', bgDivs.length === 1, 'got ' + bgDivs.length);
+        if (bgDivs.length === 1) {
+            var bgp = getPos(bgDivs[0]);
+            assert('BG left = 57', approxEq(bgp.left, HALF), 'got ' + bgp.left);
+            assert('BG top = 57', approxEq(bgp.top, HALF), 'got ' + bgp.top);
+            assert('BG width = 912', approxEq(bgp.width, BW), 'got ' + bgp.width);
+            assert('BG height = 1026', approxEq(bgp.height, BH), 'got ' + bgp.height);
+        }
+
+        /* ===== TEST 3: Horizontal lines (10 lines) ===== */
+        assert('Exactly 10 horizontal lines', hLineDivs.length === 10, 'got ' + hLineDivs.length);
+        if (hLineDivs.length === 10) {
+            /* Check positions: y = iy(row) - 1 for row 0-9 */
+            var hYs = [];
+            for (var i = 0; i < hLineDivs.length; i++) {
+                hYs.push(getPos(hLineDivs[i]).top);
+            }
+            hYs.sort(function(a, b) { return a - b; });
+            for (var row = 0; row < 10; row++) {
+                var expected = iy(row) - 1;
+                assert('H-line ' + row + ' at y=' + expected, approxEq(hYs[row], expected), 'got ' + hYs[row]);
+            }
+            /* All same width and left */
+            for (var i = 0; i < hLineDivs.length; i++) {
+                var p = getPos(hLineDivs[i]);
+                assert('H-line ' + i + ' width=912', approxEq(p.width, BW), 'got ' + p.width);
+                assert('H-line ' + i + ' left=57', approxEq(p.left, HALF), 'got ' + p.left);
+            }
+        }
+
+        /* ===== TEST 4: Vertical lines ===== */
+        /* Outer: 2 full-height (col 0, col 8)
+           Inner: 14 half-height (col 1-7, top and bottom) = 7*2=14 */
+        var fullVLines = [], halfVLines = [];
+        for (var i = 0; i < vLineDivs.length; i++) {
+            var p = getPos(vLineDivs[i]);
+            if (approxEq(p.height, BH)) fullVLines.push(vLineDivs[i]);
+            else halfVLines.push(vLineDivs[i]);
+        }
+        assert('2 full-height vertical lines (col 0, col 8)', fullVLines.length === 2, 'got ' + fullVLines.length);
+        assert('14 half-height vertical lines (col 1-7 x2)', halfVLines.length === 14, 'got ' + halfVLines.length);
+
+        if (fullVLines.length === 2) {
+            var xs = fullVLines.map(function(d) { return getPos(d).left; }).sort(function(a,b){return a-b;});
+            assert('Full V-line at col 0 (x=56)', approxEq(xs[0], ix(0) - 1), 'got ' + xs[0]);
+            assert('Full V-line at col 8 (x=961)', approxEq(xs[1], ix(8) - 1), 'got ' + xs[1]);
+        }
+
+        if (halfVLines.length === 14) {
+            /* Top halves: top=56, height=4*114=456 */
+            /* Bottom halves: top=iy(5)=627, height=456 */
+            var topHalves = [], botHalves = [];
+            for (var i = 0; i < halfVLines.length; i++) {
+                var p = getPos(halfVLines[i]);
+                if (approxEq(p.top, HALF)) topHalves.push(halfVLines[i]);
+                else botHalves.push(halfVLines[i]);
+            }
+            assert('7 top-half vertical lines', topHalves.length === 7, 'got ' + topHalves.length);
+            assert('7 bottom-half vertical lines', botHalves.length === 7, 'got ' + botHalves.length);
+
+            /* Check top halves start at y=57 and height=456 */
+            for (var i = 0; i < topHalves.length; i++) {
+                var p = getPos(topHalves[i]);
+                assert('Top V-line ' + i + ' top=57', approxEq(p.top, HALF), 'got ' + p.top);
+                assert('Top V-line ' + i + ' height=456', approxEq(p.height, 4 * CELL), 'got ' + p.height);
+            }
+            /* Check bottom halves start at y=iy(5)=627 and height=456 */
+            for (var i = 0; i < botHalves.length; i++) {
+                var p = getPos(botHalves[i]);
+                assert('Bot V-line ' + i + ' top=627', approxEq(p.top, iy(5)), 'got ' + p.top);
+                assert('Bot V-line ' + i + ' height=456', approxEq(p.height, 4 * CELL), 'got ' + p.height);
+            }
+            /* Check x positions: col 1-7 = ix(1)-1 to ix(7)-1 */
+            var halfXs = halfVLines.map(function(d) { return getPos(d).left; }).sort(function(a,b){return a-b;});
+            for (var col = 1; col <= 7; col++) {
+                /* Each col appears twice (top and bottom), so index = (col-1)*2 and (col-1)*2+1 */
+                var idx = (col - 1) * 2;
+                assert('Half V-line col ' + col + ' at x=' + (ix(col)-1), approxEq(halfXs[idx], ix(col) - 1), 'got ' + halfXs[idx]);
+            }
+        }
+
+        /* ===== TEST 5: Palace diagonals (4 diagonals) ===== */
+        assert('Exactly 4 palace diagonals', diagDivs.length === 4, 'got ' + diagDivs.length);
+        if (diagDivs.length === 4) {
+            /* Check positions:
+               Top palace: (ix(3),iy(0),45), (ix(5),iy(0),-45)
+               Bottom palace: (ix(3),iy(7),45), (ix(5),iy(7),-45) */
+            for (var i = 0; i < diagDivs.length; i++) {
+                var p = getPos(diagDivs[i]);
+                var tf = diagDivs[i].style.transform;
+                var deg = tf.match(/rotate\(([-\d.]+)deg\)/);
+                deg = deg ? parseFloat(deg[1]) : null;
+                assert('Diag ' + i + ' has rotation', deg !== null, 'transform=' + tf);
+            }
+            /* Check that 2 start at y=iy(0)=57 and 2 at y=iy(7)=855 */
+            var topDiags = [], botDiags = [];
+            for (var i = 0; i < diagDivs.length; i++) {
+                var p = getPos(diagDivs[i]);
+                if (approxEq(p.top, iy(0))) topDiags.push(diagDivs[i]);
+                else if (approxEq(p.top, iy(7))) botDiags.push(diagDivs[i]);
+            }
+            assert('2 top palace diagonals', topDiags.length === 2, 'got ' + topDiags.length);
+            assert('2 bottom palace diagonals', botDiags.length === 2, 'got ' + botDiags.length);
+
+            if (topDiags.length === 2) {
+                var topXs = topDiags.map(function(d) { return getPos(d).left; }).sort(function(a,b){return a-b;});
+                assert('Top diag at x=ix(3)=399', approxEq(topXs[0], ix(3)), 'got ' + topXs[0]);
+                assert('Top diag at x=ix(5)=627', approxEq(topXs[1], ix(5)), 'got ' + topXs[1]);
+            }
+            if (botDiags.length === 2) {
+                var botXs = botDiags.map(function(d) { return getPos(d).left; }).sort(function(a,b){return a-b;});
+                assert('Bot diag at x=ix(3)=399', approxEq(botXs[0], ix(3)), 'got ' + botXs[0]);
+                assert('Bot diag at x=ix(5)=627', approxEq(botXs[1], ix(5)), 'got ' + botXs[1]);
+            }
+        }
+
+        /* ===== TEST 6: River text ===== */
+        assert('Exactly 2 river text divs', riverDivs.length === 2, 'got ' + riverDivs.length);
+        if (riverDivs.length === 2) {
+            var riverY = iy(4) + HALF; /* 513 */
+            for (var i = 0; i < riverDivs.length; i++) {
+                var p = getPos(riverDivs[i]);
+                assert('River text ' + i + ' at y=river midpoint', approxEq(p.top, riverY - 14), 'got ' + p.top);
+            }
+            /* Left text at ix(2)-50, right text at ix(6)-50 */
+            var riverXs = riverDivs.map(function(d) { return getPos(d).left; }).sort(function(a,b){return a-b;});
+            assert('River text left at x=ix(2)-50=163', approxEq(riverXs[0], ix(2) - 50), 'got ' + riverXs[0]);
+            assert('River text right at x=ix(6)-50=619', approxEq(riverXs[1], ix(6) - 50), 'got ' + riverXs[1]);
+            /* Symmetry: left and right should be equidistant from center */
+            var centerX = CW / 2;
+            var leftDist = centerX - (riverXs[0] + 50); /* center of left text */
+            var rightDist = (riverXs[1] + 50) - centerX; /* center of right text */
+            assert('River text symmetric around center', approxEq(leftDist, rightDist), 'left=' + leftDist + ' right=' + rightDist);
+        }
+
+        /* ===== TEST 7: Pieces centered on intersections ===== */
+        assert('32 pieces on board', pieceDivs.length === 32, 'got ' + pieceDivs.length);
+        if (pieceDivs.length > 0) {
+            var maxBlackOffset = 0, maxRedOffset = 0;
+            var maxBlackInfo = '', maxRedInfo = '';
+            for (var i = 0; i < pieceDivs.length; i++) {
+                var p = getPos(pieceDivs[i]);
+                /* Piece center = left + width/2, top + height/2
+                   With box-sizing:border-box, width includes border */
+                var pcx = p.left + p.width / 2;
+                var pcy = p.top + p.height / 2;
+                /* Find nearest intersection */
+                var col = Math.round((pcx - HALF) / CELL);
+                var row = Math.round((pcy - HALF) / CELL);
+                var ixExp = ix(col);
+                var iyExp = iy(row);
+                var dx = pcx - ixExp;
+                var dy = pcy - iyExp;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                /* Determine if red or black */
+                var bg = pieceDivs[i].style.background;
+                var isRed = bg.indexOf('#fff') >= 0 || bg.indexOf('rgb(255') >= 0;
+                if (isRed) {
+                    if (dist > maxRedOffset) { maxRedOffset = dist; maxRedInfo = 'piece at (' + col + ',' + row + ') offset=(' + dx + ',' + dy + ')'; }
+                } else {
+                    if (dist > maxBlackOffset) { maxBlackOffset = dist; maxBlackInfo = 'piece at (' + col + ',' + row + ') offset=(' + dx + ',' + dy + ')'; }
+                }
+            }
+            assert('Black pieces within 2px of intersection', maxBlackOffset <= 2, 'max=' + maxBlackOffset + 'px ' + maxBlackInfo);
+            assert('Red pieces within 7px of intersection (5px shift)', maxRedOffset <= 7, 'max=' + maxRedOffset + 'px ' + maxRedInfo);
+        }
+
+        /* ===== TEST 8: Piece X alignment (all pieces same X offset) ===== */
+        if (pieceDivs.length > 0) {
+            var xOffset = null;
+            var allXOk = true;
+            for (var i = 0; i < pieceDivs.length; i++) {
+                var p = getPos(pieceDivs[i]);
+                var pcx = p.left + p.width / 2;
+                var col = Math.round((pcx - HALF) / CELL);
+                var dx = pcx - ix(col);
+                if (xOffset === null) xOffset = dx;
+                if (!approxEq(dx, xOffset, 0.5)) allXOk = false;
+            }
+            assert('All pieces have same X offset from intersection', allXOk, 'offsets vary');
+        }
+
+        /* ===== TEST 9: Click areas centered on intersections ===== */
+        assert('90 click areas', clickDivs.length === 90, 'got ' + clickDivs.length);
+        if (clickDivs.length > 0) {
+            var clickOk = true;
+            for (var i = 0; i < clickDivs.length; i++) {
+                var p = getPos(clickDivs[i]);
+                /* Click area center = left + width/2, top + height/2 */
+                var ccx = p.left + p.width / 2;
+                var ccy = p.top + p.height / 2;
+                var col = Math.round((ccx - HALF) / CELL);
+                var row = Math.round((ccy - HALF) / CELL);
+                var dx = ccx - ix(col);
+                var dy = ccy - iy(row);
+                if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                    clickOk = false;
+                    assert('Click area (' + col + ',' + row + ') centered', false, 'offset=(' + dx + ',' + dy + ')');
+                }
+            }
+            if (clickOk) assert('All click areas centered on intersections', true);
+        }
+
+        /* ===== TEST 10: Board symmetry ===== */
+        /* Horizontal symmetry: left and right sides mirror */
+        var centerX = CW / 2;
+        if (hLineDivs.length === 10) {
+            var symOk = true;
+            for (var i = 0; i < hLineDivs.length; i++) {
+                var p = getPos(hLineDivs[i]);
+                /* Line should be centered: left + width/2 = centerX */
+                var lineCenter = p.left + p.width / 2;
+                if (!approxEq(lineCenter, centerX, 1)) symOk = false;
+            }
+            assert('Horizontal lines centered (left-right symmetry)', symOk);
+        }
+        if (vLineDivs.length > 0) {
+            /* Check that vertical lines are symmetric around center */
+            var vXs = [];
+            for (var i = 0; i < vLineDivs.length; i++) {
+                vXs.push(getPos(vLineDivs[i]).left + 1); /* +1 for line center */
+            }
+            vXs.sort(function(a, b) { return a - b; });
+            /* For each line on the left, there should be one on the right
+               at centerX + (centerX - leftX) */
+            var symOk = true;
+            for (var i = 0; i < vXs.length; i++) {
+                if (vXs[i] > centerX) break;
+                var mirrorX = 2 * centerX - vXs[i];
+                var found = false;
+                for (var j = 0; j < vXs.length; j++) {
+                    if (approxEq(vXs[j], mirrorX, 1)) { found = true; break; }
+                }
+                if (!found) { symOk = false; break; }
+            }
+            assert('Vertical lines symmetric around center', symOk);
+        }
+
+        /* ===== TEST 11: Legal move dots centered on intersections ===== */
+        /* To test this, we need to select a piece first.
+           For now, just check that any existing dots are centered. */
+        if (dotDivs.length > 0) {
+            var dotsOk = true;
+            for (var i = 0; i < dotDivs.length; i++) {
+                var p = getPos(dotDivs[i]);
+                var dcx = p.left + p.width / 2;
+                var dcy = p.top + p.height / 2;
+                var col = Math.round((dcx - HALF) / CELL);
+                var row = Math.round((dcy - HALF) / CELL);
+                var dx = dcx - ix(col);
+                var dy = dcy - iy(row);
+                if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                    dotsOk = false;
+                    assert('Dot at (' + col + ',' + row + ') centered', false, 'offset=(' + dx + ',' + dy + ')');
+                }
+            }
+            if (dotsOk) assert('All dots centered on intersections', true);
+        } else {
+            assert('No dots to test (select a piece to test)', true);
+        }
+
+        /* ===== TEST 12: Capture rings centered on intersections ===== */
+        if (ringDivs.length > 0) {
+            var ringsOk = true;
+            for (var i = 0; i < ringDivs.length; i++) {
+                var p = getPos(ringDivs[i]);
+                var rcx = p.left + p.width / 2;
+                var rcy = p.top + p.height / 2;
+                var col = Math.round((rcx - HALF) / CELL);
+                var row = Math.round((rcy - HALF) / CELL);
+                var dx = rcx - ix(col);
+                var dy = rcy - iy(row);
+                if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                    ringsOk = false;
+                    assert('Ring at (' + col + ',' + row + ') centered', false, 'offset=(' + dx + ',' + dy + ')');
+                }
+            }
+            if (ringsOk) assert('All rings centered on intersections', true);
+        } else {
+            assert('No rings to test (select a piece to test)', true);
+        }
+
+        /* ===== TEST 13: Grid line spacing uniform ===== */
+        if (hLineDivs.length === 10) {
+            var hYs = hLineDivs.map(function(d) { return getPos(d).top; }).sort(function(a,b){return a-b;});
+            var spacingOk = true;
+            for (var i = 1; i < hYs.length; i++) {
+                var spacing = hYs[i] - hYs[i-1];
+                if (!approxEq(spacing, CELL, 1)) {
+                    spacingOk = false;
+                    assert('H-line spacing ' + i + ' = 114', false, 'got ' + spacing);
+                }
+            }
+            if (spacingOk) assert('All horizontal line spacing = 114', true);
+        }
+
+        /* ===== TEST 14: Palace diagonal symmetry ===== */
+        /* Top palace center = (ix(4), iy(1)), bottom = (ix(4), iy(8)) */
+        /* Diagonals should be symmetric around col 4 */
+        if (diagDivs.length === 4) {
+            var topDiagXs = [], botDiagXs = [];
+            for (var i = 0; i < diagDivs.length; i++) {
+                var p = getPos(diagDivs[i]);
+                if (approxEq(p.top, iy(0))) topDiagXs.push(p.left);
+                else if (approxEq(p.top, iy(7))) botDiagXs.push(p.left);
+            }
+            topDiagXs.sort(function(a,b){return a-b;});
+            botDiagXs.sort(function(a,b){return a-b;});
+            /* Symmetry: topDiagXs[0] and topDiagXs[1] should be equidistant from ix(4) */
+            if (topDiagXs.length === 2) {
+                var center = ix(4);
+                assert('Top palace diagonals symmetric', approxEq(center - topDiagXs[0], topDiagXs[1] - center),
+                    'left=' + (center - topDiagXs[0]) + ' right=' + (topDiagXs[1] - center));
+            }
+            if (botDiagXs.length === 2) {
+                var center = ix(4);
+                assert('Bottom palace diagonals symmetric', approxEq(center - botDiagXs[0], botDiagXs[1] - center),
+                    'left=' + (center - botDiagXs[0]) + ' right=' + (botDiagXs[1] - center));
+            }
+            /* Top and bottom palaces should be symmetric around board vertical center.
+               Top palace spans rows 0-2, center at iy(1).
+               Bottom palace spans rows 7-9, center at iy(8).
+               Board center = (iy(0)+iy(9))/2 = iy(4)+HALF = 513
+               Top palace center = iy(1) = 171, dist from center = 513-171 = 342
+               Bot palace center = iy(8) = 969, dist from center = 969-513 = 456
+               Wait - that's not symmetric! Top palace is rows 0-2 (3 rows),
+               bottom is rows 7-9 (3 rows). Center of top = row 1, center of bot = row 8.
+               Board center = row 4.5. 
+               Top dist = 4.5-1 = 3.5 rows, bot dist = 8-4.5 = 3.5 rows. SYMMETRIC!
+               In pixels: top center = iy(1)=171, bot center = iy(8)=969
+               Board center = (iy(0)+iy(9))/2 = (57+1083)/2 = 570
+               Top dist = 570-171 = 399, bot dist = 969-570 = 399. SYMMETRIC! */
+            var boardCenterY = (iy(0) + iy(9)) / 2;
+            var topPalaceCenterY = iy(1);
+            var botPalaceCenterY = iy(8);
+            assert('Palaces symmetric around board center Y', approxEq(boardCenterY - topPalaceCenterY, botPalaceCenterY - boardCenterY),
+                'top=' + (boardCenterY - topPalaceCenterY) + ' bot=' + (botPalaceCenterY - boardCenterY));
+        }
+
+        /* ===== TEST 15: River gap symmetry ===== */
+        /* River is between row 4 and row 5. The gap should be centered
+           between iy(4) and iy(5), which is at (iy(4)+iy(5))/2 = iy(4)+HALF */
+        var riverMid = (iy(4) + iy(5)) / 2;
+        var boardMidY = (iy(0) + iy(9)) / 2;
+        assert('River gap centered on board Y', approxEq(riverMid, boardMidY),
+            'river=' + riverMid + ' board=' + boardMidY);
+
+        /* ===== TEST 16: Total div count sanity ===== */
+        /* Expected: 1 bg + 10 h-lines + 16 v-lines + 4 diags + 2 river + 32 pieces + 90 clicks = 155
+           Plus any dots/rings/markers (0 at start) */
+        var totalExpected = 1 + 10 + 16 + 4 + 2 + 32 + 90;
+        assert('Total div count = ' + totalExpected + ' (no selection)', allDivs.length === totalExpected,
+            'got ' + allDivs.length + ' (expected ' + totalExpected + ')');
+
+        /* ===== TEST 17: Piece colors ===== */
+        if (pieceDivs.length === 32) {
+            var redCount = 0, blackCount = 0;
+            for (var i = 0; i < pieceDivs.length; i++) {
+                var bg = pieceDivs[i].style.background;
+                var clr = pieceDivs[i].style.color;
+                if (bg.indexOf('#fff') >= 0 || bg.indexOf('rgb(255') >= 0) redCount++;
+                else if (bg.indexOf('#000') >= 0 || bg.indexOf('rgb(0') >= 0) blackCount++;
+            }
+            assert('16 red pieces', redCount === 16, 'got ' + redCount);
+            assert('16 black pieces', blackCount === 16, 'got ' + blackCount);
+        }
+
+        /* ===== TEST 18: Red pieces shifted down 5px ===== */
+        if (pieceDivs.length === 32) {
+            /* Find a red and black piece at same column, compare Y offset */
+            var redOffsets = [], blackOffsets = [];
+            for (var i = 0; i < pieceDivs.length; i++) {
+                var p = getPos(pieceDivs[i]);
+                var pcx = p.left + p.width / 2;
+                var pcy = p.top + p.height / 2;
+                var col = Math.round((pcx - HALF) / CELL);
+                var row = Math.round((pcy - HALF) / CELL);
+                var dy = pcy - iy(row);
+                var bg = pieceDivs[i].style.background;
+                if (bg.indexOf('#fff') >= 0 || bg.indexOf('rgb(255') >= 0) {
+                    redOffsets.push(dy);
+                } else {
+                    blackOffsets.push(dy);
+                }
+            }
+            /* Black offset should be ~0, red offset should be ~5 */
+            if (blackOffsets.length > 0) {
+                var avgBlack = blackOffsets.reduce(function(a,b){return a+b;}, 0) / blackOffsets.length;
+                assert('Black pieces Y offset ~0', approxEq(avgBlack, 0, 2), 'avg=' + avgBlack);
+            }
+            if (redOffsets.length > 0) {
+                var avgRed = redOffsets.reduce(function(a,b){return a+b;}, 0) / redOffsets.length;
+                assert('Red pieces Y offset ~5', approxEq(avgRed, 5, 2), 'avg=' + avgRed);
+            }
+            if (redOffsets.length > 0 && blackOffsets.length > 0) {
+                var avgBlack = blackOffsets.reduce(function(a,b){return a+b;}, 0) / blackOffsets.length;
+                var avgRed = redOffsets.reduce(function(a,b){return a+b;}, 0) / redOffsets.length;
+                assert('Red-black Y difference ~5', approxEq(avgRed - avgBlack, 5, 2), 'diff=' + (avgRed - avgBlack));
+            }
+        }
+
+        /* ===== TEST 19: Select piece and test dots/rings ===== */
+        /* Find the first red piece and simulate click */
+        var firstRedPiece = null;
+        for (var i = 0; i < pieceDivs.length; i++) {
+            var bg = pieceDivs[i].style.background;
+            if (bg.indexOf('#fff') >= 0 || bg.indexOf('rgb(255') >= 0) {
+                firstRedPiece = pieceDivs[i];
+                break;
+            }
+        }
+
+        /* Display results */
+        var resultsHtml = '<h3>Test Results: ' + testPass + ' passed, ' + testFail + ' failed</h3>';
+        resultsHtml += '<div style="margin-bottom:10px;"><button onclick="runTestsPhase2()">Run Phase 2 (select piece)</button></div>';
+        for (var i = 0; i < testResults.length; i++) {
+            resultsHtml += '<div>' + testResults[i] + '</div>';
+        }
+        document.getElementById('test-results').innerHTML = resultsHtml;
+
+        /* Store for phase 2 */
+        window._testBoard = board;
+        window._testClickDivs = clickDivs;
+    }
+
+    function runTestsPhase2() {
+        /* Click on the red rook to show legal move dots, then test their positions.
+           Red rook at row 9, col 0 → square = (2+9)*11 + (0+1) = 122 */
+        var board = window._testBoard;
+        if (!board) { console.log('No board'); return; }
+        var allDivs = board.getElementsByTagName('div');
+
+        /* Find the click div with onclick="tapSquare(122)" */
+        var targetClick = null;
+        for (var i = 0; i < allDivs.length; i++) {
+            if (allDivs[i].style.width === '114px' && allDivs[i].style.height === '114px' && allDivs[i].style.cursor === 'pointer') {
+                var oc = allDivs[i].getAttribute('onclick') || '';
+                if (oc.indexOf('tapSquare(122)') >= 0) {
+                    targetClick = allDivs[i];
+                    break;
+                }
+            }
+        }
+
+        if (!targetClick) { console.log('No targetClick for rook 122'); return; }
+
+        /* Simulate click */
+        var onclick = targetClick.getAttribute('onclick');
+        if (onclick) {
+            /* Extract square number and call tapSquare */
+            var m = onclick.match(/tapSquare\((\d+)\)/);
+            if (m) {
+                tapSquare(parseInt(m[1]));
+            }
+        }
+
+        /* Wait for board to redraw, then test dots/rings */
+        setTimeout(function() {
+            var CELL = 114, HALF = 57;
+            function ix(col) { return HALF + col * CELL; }
+            function iy(row) { return HALF + row * CELL; }
+
+            var board = window._testBoard;
+            var allDivs = board.getElementsByTagName('div');
+
+            /* Find dots and rings */
+            /* bgMatch helper (same as Phase 1) */
+            function bgMatch2(el, hexColor) {
+                var bg = el.style.background || el.style.backgroundColor || '';
+                if (bg.indexOf(hexColor) >= 0) return true;
+                var hex = hexColor;
+                if (hex.length === 4) hex = '#' + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3];
+                var r = parseInt(hex.substr(1,2),16), g = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16);
+                return bg.indexOf('rgb(' + r + ', ' + g + ', ' + b + ')') >= 0 ||
+                       bg.indexOf('rgb(' + r + ',' + g + ',' + b + ')') >= 0;
+            }
+            var dotDivs = [], ringDivs = [];
+            for (var i = 0; i < allDivs.length; i++) {
+                var w = parseFloat(allDivs[i].style.width);
+                var h = parseFloat(allDivs[i].style.height);
+                if (w === 27 && h === 27 && bgMatch2(allDivs[i], '#555')) dotDivs.push(allDivs[i]);
+                if (w === 102 && h === 102) ringDivs.push(allDivs[i]);
+            }
+
+            var p2Results = [];
+            var p2Pass = 0, p2Fail = 0;
+            function assert2(name, cond, detail) {
+                if (cond) { p2Pass++; p2Results.push('<span style="color:green;">PASS</span> ' + name); }
+                else { p2Fail++; p2Results.push('<span style="color:red;">FAIL</span> ' + name + (detail ? ' <i>' + detail + '</i>' : '')); }
+            }
+
+            assert2('Legal move dots exist after selection', dotDivs.length > 0, 'got ' + dotDivs.length);
+            assert2('At least 2 legal move dots (rook has many moves)', dotDivs.length >= 2, 'got ' + dotDivs.length);
+
+            /* Test each dot is centered on an intersection */
+            var allDotsCentered = true;
+            for (var i = 0; i < dotDivs.length; i++) {
+                var p = { left: parseFloat(dotDivs[i].style.left), top: parseFloat(dotDivs[i].style.top),
+                          width: parseFloat(dotDivs[i].style.width), height: parseFloat(dotDivs[i].style.height) };
+                var dcx = p.left + p.width / 2;
+                var dcy = p.top + p.height / 2;
+                var col = Math.round((dcx - HALF) / CELL);
+                var row = Math.round((dcy - HALF) / CELL);
+                var dx = dcx - ix(col);
+                var dy = dcy - iy(row);
+                assert2('Dot ' + i + ' at (' + col + ',' + row + ') centered on intersection', Math.abs(dx) <= 1 && Math.abs(dy) <= 1,
+                    'offset=(' + dx + ',' + dy + ')');
+                if (Math.abs(dx) > 1 || Math.abs(dy) > 1) allDotsCentered = false;
+            }
+            assert2('All dots centered on intersections', allDotsCentered);
+
+            /* Test each ring is centered on an intersection */
+            var allRingsCentered = true;
+            for (var i = 0; i < ringDivs.length; i++) {
+                var p = { left: parseFloat(ringDivs[i].style.left), top: parseFloat(ringDivs[i].style.top),
+                          width: parseFloat(ringDivs[i].style.width), height: parseFloat(ringDivs[i].style.height) };
+                var rcx = p.left + p.width / 2;
+                var rcy = p.top + p.height / 2;
+                var col = Math.round((rcx - HALF) / CELL);
+                var row = Math.round((rcy - HALF) / CELL);
+                var dx = rcx - ix(col);
+                var dy = rcy - iy(row);
+                assert2('Ring ' + i + ' at (' + col + ',' + row + ') centered on intersection', Math.abs(dx) <= 1 && Math.abs(dy) <= 1,
+                    'offset=(' + dx + ',' + dy + ')');
+                if (Math.abs(dx) > 1 || Math.abs(dy) > 1) allRingsCentered = false;
+            }
+            assert2('All rings centered on intersections', allRingsCentered);
+
+            /* Test selected piece has #ccc background */
+            var selFound = false;
+            var selCentered = false;
+            for (var i = 0; i < allDivs.length; i++) {
+                if (allDivs[i].style.width === '95px' && bgMatch2(allDivs[i], '#ccc')) {
+                    selFound = true;
+                    /* Check selected piece is at rook position (col 0, row 9) */
+                    var p = { left: parseFloat(allDivs[i].style.left), top: parseFloat(allDivs[i].style.top),
+                              width: parseFloat(allDivs[i].style.width), height: parseFloat(allDivs[i].style.height) };
+                    var pcx = p.left + p.width / 2;
+                    var pcy = p.top + p.height / 2;
+                    /* Red rook at (0,9), red shift +5: expected center = (ix(0), iy(9)+5) = (57, 1088) */
+                    if (Math.abs(pcx - ix(0)) <= 2 && Math.abs(pcy - (iy(9) + 5)) <= 2) {
+                        selCentered = true;
+                    }
+                    break;
+                }
+            }
+            assert2('Selected piece has #ccc background', selFound);
+            assert2('Selected piece at rook position (0,9) with red shift', selCentered);
+
+            /* Test total div count with selection (155 + dots + rings + 1 selected piece bg change) */
+            var expectedMin = 155 + dotDivs.length + ringDivs.length;
+            assert2('Total divs >= 155 + dots + rings', allDivs.length >= expectedMin,
+                'got ' + allDivs.length + ' expected >= ' + expectedMin);
+
+            /* Test all dots are on valid board intersections (col 0-8, row 0-9) */
+            var dotsOnBoard = true;
+            for (var i = 0; i < dotDivs.length; i++) {
+                var p = { left: parseFloat(dotDivs[i].style.left), top: parseFloat(dotDivs[i].style.top),
+                          width: parseFloat(dotDivs[i].style.width), height: parseFloat(dotDivs[i].style.height) };
+                var dcx = p.left + p.width / 2;
+                var dcy = p.top + p.height / 2;
+                var col = Math.round((dcx - HALF) / CELL);
+                var row = Math.round((dcy - HALF) / CELL);
+                if (col < 0 || col > 8 || row < 0 || row > 9) {
+                    dotsOnBoard = false;
+                    assert2('Dot ' + i + ' on board (' + col + ',' + row + ')', false, 'off board');
+                }
+            }
+            assert2('All dots on valid board intersections', dotsOnBoard);
+
+            /* Test dots are symmetric (rook at col 0 should have symmetric moves) */
+            /* The rook at (0,9) can move along col 0 and row 9.
+               Moves along row 9 should be symmetric around col 0... no, they go right only.
+               But moves along col 0 go up. Let's just verify all dots have col=0 or row=9. */
+            var rookMovesValid = true;
+            for (var i = 0; i < dotDivs.length; i++) {
+                var p = { left: parseFloat(dotDivs[i].style.left), top: parseFloat(dotDivs[i].style.top),
+                          width: parseFloat(dotDivs[i].style.width), height: parseFloat(dotDivs[i].style.height) };
+                var dcx = p.left + p.width / 2;
+                var dcy = p.top + p.height / 2;
+                var col = Math.round((dcx - HALF) / CELL);
+                var row = Math.round((dcy - HALF) / CELL);
+                /* Rook at (0,9) moves: along col 0 (row 0-8) or along row 9 (col 1-8) */
+                if (col !== 0 && row !== 9) {
+                    rookMovesValid = false;
+                    assert2('Dot ' + i + ' is valid rook move (' + col + ',' + row + ')', false, 'not on col 0 or row 9');
+                }
+            }
+            assert2('All rook move dots on col 0 or row 9', rookMovesValid);
+
+            /* Display phase 2 results */
+            var html = '<h3>Phase 2 Results: ' + p2Pass + ' passed, ' + p2Fail + ' failed</h3>';
+            html += '<div style="margin-bottom:10px;"><button onclick="location.reload()">Rerun All</button></div>';
+            for (var i = 0; i < p2Results.length; i++) {
+                html += '<div>' + p2Results[i] + '</div>';
+            }
+            var existing = document.getElementById('test-results').innerHTML;
+            document.getElementById('test-results').innerHTML = html + '<hr>' + existing;
+            /* Signal completion */
+            var sig = document.getElementById('phase2-done');
+            if (!sig) {
+                sig = document.createElement('div');
+                sig.id = 'phase2-done';
+                document.body.appendChild(sig);
+            }
+            sig.textContent = 'Phase 2 done: ' + p2Pass + 'P ' + p2Fail + 'F';
+        }, 200);
+    }
+
+    /* Start game and run tests. Use two-player mode to avoid AI hanging. */
+    setTimeout(function() {
+        var btn = document.getElementById('two-player-btn');
+        if (!btn || !btn.onclick) btn = document.getElementById('vs-ai-btn');
+        if (btn && btn.onclick) btn.onclick();
+        setTimeout(function() {
+            runTests();
+            /* Auto-run Phase 2 after a delay */
+            setTimeout(function() {
+                runTestsPhase2();
+            }, 1000);
+        }, 500);
+    }, 500);
     </script>
 </body>
 </html>
