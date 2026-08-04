@@ -2,24 +2,7 @@
    Game logic + UI binding, built on Wukong engine */
 
 (function() {
-
-    // Helper: add class (classList not supported in old WebKit)
-    function addClass(el, cls) {
-        if (!el) return;
-        var cn = el.className;
-        if (cn.indexOf(cls) === -1) {
-            el.className = cn ? (cn + ' ' + cls) : cls;
-        }
-    }
-
-    // Helper: remove class
-    function removeClass(el, cls) {
-        if (!el) return;
-        var cn = el.className;
-        if (cn.indexOf(cls) !== -1) {
-            el.className = cn.replace(new RegExp('\\b' + cls + '\\b', 'g'), '').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-        }
-    }
+    'use strict';
 
     // Piece encoding (matches Wukong engine)
     // 0=EMPTY, 1-7=RED, 8-14=BLACK
@@ -43,27 +26,12 @@
 
     var RED = 0;
     var BLACK = 1;
-
-    // Board dimensions
     var COLS = 9;
     var ROWS = 10;
 
-    // Square mapping: square = (2 + displayRow) * 11 + (file + 1)
-    // displayRow 0 = rank 9 (top, black), displayRow 9 = rank 0 (bottom, red)
-    function squareFromCoord(displayRow, file) {
-        return (2 + displayRow) * 11 + (file + 1);
-    }
-
-    function coordFromSquare(sq) {
-        var mailboxRow = Math.floor(sq / 11);
-        var file = (sq % 11) - 1;
-        var displayRow = mailboxRow - 2;
-        return { row: displayRow, file: file };
-    }
-
     // Game state
     var engine = null;
-    var gameMode = 'ai-red';  // 'ai-red', 'ai-black', 'two-player'
+    var gameMode = 'ai-red';
     var aiDepth = 3;
     var flip = 0;
     var selectedSquare = null;
@@ -73,110 +41,92 @@
     var gameResult = '*';
     var aiThinking = false;
 
-    // Error display - show errors on screen since we can't use console
-    function showError(msg) {
-        var statusEl = document.getElementById('status');
-        if (statusEl) {
-            statusEl.textContent = 'ERROR: ' + msg;
-        }
-        // Also try to append to body
-        var div = document.getElementById('error-log');
-        if (!div) {
-            div = document.createElement('div');
-            div.id = 'error-log';
-            div.style.cssText = 'color:red;font-size:12px;padding:5px;border:1px solid red;margin:5px;';
-            document.body.appendChild(div);
-        }
-        div.innerHTML += msg + '<br>';
+    // Square mapping: square = (2 + displayRow) * 11 + (file + 1)
+    function squareFromCoord(displayRow, file) {
+        return (2 + displayRow) * 11 + (file + 1);
     }
 
-    // Safe wrapper - catches errors and displays them
-    function safe(fn, label) {
-        return function() {
-            try {
-                return fn.apply(this, arguments);
-            } catch (e) {
-                showError((label || 'error') + ': ' + (e && e.message ? e.message : e));
-                return null;
-            }
-        };
+    function pieceChar(piece) {
+        return PIECE_CHARS[piece] || '';
+    }
+
+    function isRed(piece) {
+        return piece >= 1 && piece <= 7;
+    }
+
+    // Helper: show/hide screens by toggling 'hidden' class via className
+    function showScreen(id) {
+        var el = document.getElementById(id);
+        if (el) el.className = el.className.replace('hidden', '').replace(/\s+/g, ' ');
+    }
+
+    function hideScreen(id) {
+        var el = document.getElementById(id);
+        if (el && el.className.indexOf('hidden') === -1) {
+            el.className = (el.className + ' hidden').replace(/\s+/g, ' ');
+        }
+    }
+
+    // Error display
+    function showError(msg) {
+        var el = document.getElementById('error-log');
+        if (el) {
+            el.innerHTML += msg + '<br>';
+        }
+        var st = document.getElementById('status');
+        if (st) st.textContent = 'ERR: ' + msg;
     }
 
     // Initialize engine
     function initEngine() {
         try {
             if (typeof Engine === 'undefined') {
-                showError('Engine undefined - wukong.js failed to load');
+                showError('Engine not loaded');
                 return;
             }
-            showError('Creating engine...');
             engine = new Engine();
-            showError('Engine created, setting board...');
             engine.setBoard(engine.START_FEN);
-            showError('Board set OK');
         } catch (e) {
             showError('initEngine: ' + (e && e.message ? e.message : e));
         }
     }
 
-    // Get piece character for display
-    function pieceChar(piece) {
-        return PIECE_CHARS[piece] || '';
-    }
-
-    // Check if piece is red
-    function isRed(piece) {
-        return piece >= 1 && piece <= 7;
-    }
-
-    // Check if piece is black
-    function isBlack(piece) {
-        return piece >= 8 && piece <= 14;
-    }
-
-    // Get side to move
-    function sideToMove() {
-        return engine.getSide();
-    }
-
     // Render the board
     function drawBoard() {
         if (!engine) return;
-
         var boardEl = document.getElementById('xiangqiboard');
+        if (!boardEl) return;
+
         var html = '<table cellspacing="0"><tbody>';
 
-        // Pre-compute legal move targets ONCE (not per cell)
+        // Pre-compute legal move targets ONCE
         var legalTargets = {};
         if (selectedSquare !== null) {
-            var legalMoves = engine.generateLegalMoves();
-            for (var i = 0; i < legalMoves.length; i++) {
-                var mv = legalMoves[i].move;
-                if (engine.getSourceSquare(mv) === selectedSquare) {
-                    var tgt = engine.getTargetSquare(mv);
-                    legalTargets[tgt] = true;
+            try {
+                var legalMoves = engine.generateLegalMoves();
+                for (var i = 0; i < legalMoves.length; i++) {
+                    var mv = legalMoves[i].move;
+                    if (engine.getSourceSquare(mv) === selectedSquare) {
+                        legalTargets[engine.getTargetSquare(mv)] = true;
+                    }
                 }
+            } catch (e) {
+                showError('drawBoard moves: ' + (e && e.message ? e.message : e));
             }
         }
 
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
             html += '<tr>';
-
             for (var file = 0; file < COLS; file++) {
-                // Apply flip
                 var actualRow = flip ? (ROWS - 1 - displayRow) : displayRow;
                 var actualFile = flip ? (COLS - 1 - file) : file;
-
                 var sq = squareFromCoord(actualRow, actualFile);
                 var piece = engine.getPiece(sq);
-
                 var classes = [];
                 var cellContent = '';
 
-                // River row (between rank 4 and rank 5, display rows 4 and 5)
                 if (actualRow === 4 || actualRow === 5) {
                     classes.push('river-cell');
-                    // Add river text on the middle columns
                     if (actualRow === 4 && (actualFile === 1 || actualFile === 2)) {
                         cellContent = '楚 河';
                     } else if (actualRow === 4 && (actualFile === 6 || actualFile === 7)) {
@@ -184,53 +134,40 @@
                     }
                 }
 
-                // Last move highlight
                 if (sq === lastMoveFrom) classes.push('last-move-from');
                 if (sq === lastMoveTo) classes.push('last-move-to');
-
-                // Selected cell
                 if (sq === selectedSquare) classes.push('selected-cell');
 
-                // Piece
                 if (piece > 0) {
                     var pieceClass = isRed(piece) ? 'piece-red' : 'piece-black';
                     cellContent = '<span class="piece ' + pieceClass + '">' + pieceChar(piece) + '</span>';
                 }
 
-                // Legal move highlight (using pre-computed map)
                 if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
-                    if (piece > 0) {
-                        classes.push('legal-capture');
-                    } else {
-                        classes.push('legal-move');
-                    }
+                    if (piece > 0) classes.push('legal-capture');
+                    else classes.push('legal-move');
                 }
 
                 var classStr = classes.length ? ' class="' + classes.join(' ') + '"' : '';
                 html += '<td' + classStr + ' id="sq_' + sq + '" onclick="tapSquare(' + sq + ')">' + cellContent + '</td>';
             }
-
             html += '</tr>';
         }
-
         html += '</tbody></table>';
         boardEl.innerHTML = html;
     }
 
     // Handle square tap
     window.tapSquare = function(sq) {
-        if (!engine || aiThinking) return;
-        if (gameResult !== '*') return;
+        if (!engine || aiThinking || gameResult !== '*') return;
 
         var piece = engine.getPiece(sq);
-        var side = sideToMove();
+        var side = engine.getSide();
 
-        // In AI mode, block human from moving AI's pieces
         if (gameMode === 'ai-red' && side === BLACK) return;
         if (gameMode === 'ai-black' && side === RED) return;
 
         if (!clickLock && piece > 0) {
-            // Check if it's the correct side's piece
             var pieceSide = isRed(piece) ? RED : BLACK;
             if (pieceSide === side) {
                 selectedSquare = sq;
@@ -238,24 +175,16 @@
                 drawBoard();
             }
         } else if (clickLock) {
-            // Try to move
-            var target = sq;
-            var valid = tryMove(selectedSquare, target);
+            var valid = tryMove(selectedSquare, sq);
             selectedSquare = null;
             clickLock = false;
-
             if (valid) {
                 drawBoard();
                 updateStatus();
                 updatePgn();
-
-                // Check game over
-                if (checkGameOver()) return;
-
-                // AI move
-                if ((gameMode === 'ai-red' && sideToMove() === BLACK) ||
-                    (gameMode === 'ai-black' && sideToMove() === RED)) {
-                    setTimeout(aiMove, 200);
+                checkGameOver();
+                if (gameResult === '*' && gameMode !== 'two-player') {
+                    setTimeout(aiMove, 100);
                 }
             } else {
                 drawBoard();
@@ -265,193 +194,175 @@
 
     // Try to make a move
     function tryMove(fromSq, toSq) {
-        var moveStr = engine.squareToString(fromSq) + engine.squareToString(toSq);
-        var move = engine.moveFromString(moveStr);
-        if (move === 0) return false;
-
-        lastMoveFrom = fromSq;
-        lastMoveTo = toSq;
-        engine.makeMove(move);
-        return true;
+        try {
+            var legalMoves = engine.generateLegalMoves();
+            for (var i = 0; i < legalMoves.length; i++) {
+                var mv = legalMoves[i].move;
+                if (engine.getSourceSquare(mv) === fromSq && engine.getTargetSquare(mv) === toSq) {
+                    engine.makeMove(mv);
+                    lastMoveFrom = fromSq;
+                    lastMoveTo = toSq;
+                    return true;
+                }
+            }
+        } catch (e) {
+            showError('tryMove: ' + (e && e.message ? e.message : e));
+        }
+        return false;
     }
 
     // AI move
     function aiMove() {
         if (!engine || gameResult !== '*') return;
-
         aiThinking = true;
-        updateStatus();
+        document.getElementById('status').textContent = 'AI thinking...';
 
-        // Use setTimeout to allow UI to update before heavy computation
-        setTimeout(function() {
+        try {
+            // Use time-based search to avoid blocking too long
             var bestMove = 0;
-            try {
-                // Set a time limit so Kindle's slow CPU doesn't hang
-                // Easy=1s, Medium=3s, Hard=8s max
-                var timeLimit = (aiDepth === 1) ? 1000 : (aiDepth === 3) ? 3000 : 8000;
-                engine.resetTimeControl();
-                var tc = engine.getTimeControl();
-                tc.timeSet = 1;
-                tc.time = timeLimit;
-                tc.stopTime = Date.now() + timeLimit;
-                engine.setTimeControl(tc);
+            var tc = engine.getTimeControl();
+            tc.timeSet = 1;
+            tc.time = 3000;
+            tc.stopTime = new Date().getTime() + 2000;
+            engine.setTimeControl(tc);
 
-                bestMove = engine.search(aiDepth);
-            } catch (e) {
-                // Ignore errors, try to recover
-            }
+            bestMove = engine.search(aiDepth);
 
-            if (bestMove === 0 || bestMove === undefined) {
-                // Fallback: pick a random legal move
+            if (bestMove !== 0) {
+                lastMoveFrom = engine.getSourceSquare(bestMove);
+                lastMoveTo = engine.getTargetSquare(bestMove);
+                engine.makeMove(bestMove);
+            } else {
+                // Fallback: pick first legal move
                 var moves = engine.generateLegalMoves();
                 if (moves.length > 0) {
-                    bestMove = moves[Math.floor(Math.random() * moves.length)].move;
+                    bestMove = moves[0].move;
+                    lastMoveFrom = engine.getSourceSquare(bestMove);
+                    lastMoveTo = engine.getTargetSquare(bestMove);
+                    engine.makeMove(bestMove);
                 }
             }
-
-            if (bestMove === 0 || bestMove === undefined) {
-                aiThinking = false;
-                checkGameOver();
-                return;
-            }
-
-            lastMoveFrom = engine.getSourceSquare(bestMove);
-            lastMoveTo = engine.getTargetSquare(bestMove);
-            engine.makeMove(bestMove);
 
             aiThinking = false;
             drawBoard();
             updateStatus();
             updatePgn();
             checkGameOver();
-        }, 50);
+        } catch (e) {
+            aiThinking = false;
+            showError('aiMove: ' + (e && e.message ? e.message : e));
+        }
     }
 
-    // Update status text
+    // Update status display
     function updateStatus() {
-        var statusEl = document.getElementById('status');
         if (!engine) return;
-
-        if (gameResult !== '*') {
-            statusEl.textContent = gameResult;
-            return;
+        var side = engine.getSide();
+        var statusEl = document.getElementById('status');
+        if (statusEl) {
+            if (gameResult !== '*') {
+                statusEl.textContent = gameResult;
+            } else {
+                statusEl.textContent = (side === RED ? 'Red' : 'Black') + ' to move';
+            }
         }
-
-        var side = sideToMove();
-        var sideName = (side === RED) ? 'Red' : 'Black';
-
-        if (aiThinking) {
-            statusEl.textContent = sideName + ' (AI) thinking...';
-        } else if (gameMode === 'two-player') {
-            statusEl.textContent = sideName + ' to move';
-        } else {
-            var isAITurn = (gameMode === 'ai-red' && side === BLACK) ||
-                           (gameMode === 'ai-black' && side === RED);
-            statusEl.textContent = sideName + (isAITurn ? ' (AI)' : ' (You)') + ' to move';
-        }
-    }
-
-    // Check if game is over
-    function checkGameOver() {
-        if (!engine) return false;
-
-        var legalMoves = engine.generateLegalMoves();
-        if (legalMoves.length === 0) {
-            var side = sideToMove();
-            // Side to move has no legal moves - checkmate or stalemate
-            // In xiangqi, stalemate = loss for the stalemated side
-            gameResult = (side === RED) ? 'Black wins!' : 'Red wins!';
-            showGameOver();
-            return true;
-        }
-
-        // Check for flying generals (kings facing each other)
-        // This is handled by the engine's move generation
-
-        updateStatus();
-        return false;
-    }
-
-    // Show game over screen
-    function showGameOver() {
-        addClass(document.getElementById('board-screen'), 'hidden');
-        removeClass(document.getElementById('game-over-screen'), 'hidden');
-        document.getElementById('result-title').textContent = gameResult;
-        updateStatus();
     }
 
     // Update PGN display
     function updatePgn() {
         if (!engine) return;
-        var moveStack = engine.moveStack();
-        var pgn = '';
-
-        for (var i = 0; i < moveStack.length; i++) {
-            var move = moveStack[i].move;
-            var moveStr = engine.moveToString(move);
-            var moveNum = (i % 2 === 0) ? (Math.floor(i / 2) + 1) + '. ' : '';
-            pgn += moveNum + moveStr + ' ';
+        try {
+            var moveStack = engine.moveStack();
+            var pgn = '';
+            for (var i = 0; i < moveStack.length; i++) {
+                var move = moveStack[i].move;
+                var moveStr = engine.moveToString(move);
+                var moveNum = (i % 2 === 0) ? (Math.floor(i / 2) + 1) + '. ' : '';
+                pgn += moveNum + moveStr + ' ';
+            }
+            var pgnEl = document.getElementById('pgn');
+            if (pgnEl) {
+                pgnEl.value = pgn;
+                pgnEl.scrollTop = pgnEl.scrollHeight;
+            }
+        } catch (e) {
+            // ignore
         }
+    }
 
-        var pgnEl = document.getElementById('pgn');
-        if (pgnEl) {
-            pgnEl.value = pgn;
-            pgnEl.scrollTop = pgnEl.scrollHeight;
+    // Check for game over
+    function checkGameOver() {
+        if (!engine) return;
+        try {
+            var moves = engine.generateLegalMoves();
+            if (moves.length === 0) {
+                var side = engine.getSide();
+                gameResult = (side === RED) ? 'Black wins!' : 'Red wins!';
+                showGameOver();
+            }
+        } catch (e) {
+            // ignore
         }
+    }
+
+    // Show game over screen
+    function showGameOver() {
+        hideScreen('board-screen');
+        showScreen('game-over-screen');
+        var titleEl = document.getElementById('result-title');
+        if (titleEl) titleEl.textContent = gameResult;
+        updateStatus();
     }
 
     // New game
     window.newGame = function() {
         if (!engine) return;
-        engine.setBoard(engine.START_FEN);
-        selectedSquare = null;
-        clickLock = false;
-        lastMoveFrom = null;
-        lastMoveTo = null;
-        gameResult = '*';
-        aiThinking = false;
+        try {
+            engine.setBoard(engine.START_FEN);
+            selectedSquare = null;
+            clickLock = false;
+            lastMoveFrom = null;
+            lastMoveTo = null;
+            gameResult = '*';
+            aiThinking = false;
 
-        addClass(document.getElementById('menu-screen'), 'hidden');
-        addClass(document.getElementById('game-over-screen'), 'hidden');
-        removeClass(document.getElementById('board-screen'), 'hidden');
+            hideScreen('menu-screen');
+            hideScreen('game-over-screen');
+            showScreen('board-screen');
 
-        drawBoard();
-        updateStatus();
-        updatePgn();
+            drawBoard();
+            updateStatus();
+            updatePgn();
 
-        // If AI plays red, AI moves first
-        if (gameMode === 'ai-black') {
-            setTimeout(aiMove, 200);
+            if (gameMode === 'ai-black') {
+                setTimeout(aiMove, 200);
+            }
+        } catch (e) {
+            showError('newGame: ' + (e && e.message ? e.message : e));
         }
     };
 
     // Undo move
     window.undoMove = function() {
         if (!engine || aiThinking) return;
-
-        // In AI mode, undo two moves (player + AI)
-        var undoCount = (gameMode !== 'two-player') ? 2 : 1;
-
-        for (var i = 0; i < undoCount; i++) {
-            try {
+        try {
+            var undoCount = (gameMode !== 'two-player') ? 2 : 1;
+            for (var i = 0; i < undoCount; i++) {
                 engine.takeBack();
-            } catch (e) {
-                break;
             }
+            selectedSquare = null;
+            clickLock = false;
+            lastMoveFrom = null;
+            lastMoveTo = null;
+            gameResult = '*';
+            hideScreen('game-over-screen');
+            showScreen('board-screen');
+            drawBoard();
+            updateStatus();
+            updatePgn();
+        } catch (e) {
+            // ignore
         }
-
-        selectedSquare = null;
-        clickLock = false;
-        lastMoveFrom = null;
-        lastMoveTo = null;
-        gameResult = '*';
-
-        addClass(document.getElementById('game-over-screen'), 'hidden');
-        removeClass(document.getElementById('board-screen'), 'hidden');
-
-        drawBoard();
-        updateStatus();
-        updatePgn();
     };
 
     // Flip board
@@ -462,97 +373,89 @@
 
     // Back to menu
     function backToMenu() {
-        addClass(document.getElementById('board-screen'), 'hidden');
-        addClass(document.getElementById('game-over-screen'), 'hidden');
-        removeClass(document.getElementById('menu-screen'), 'hidden');
+        hideScreen('board-screen');
+        hideScreen('game-over-screen');
+        showScreen('menu-screen');
     }
 
     // Set AI difficulty
     function setDifficulty(depth) {
-        try {
-            aiDepth = depth;
-            var btns = document.querySelectorAll('.diff-btn');
-            for (var i = 0; i < btns.length; i++) {
-                var d = parseInt(btns[i].getAttribute('data-depth'), 10);
+        aiDepth = depth;
+        // Update button styles using getElementById only
+        var btns = ['diff-easy-btn', 'diff-medium-btn', 'diff-hard-btn'];
+        for (var i = 0; i < btns.length; i++) {
+            var btn = document.getElementById(btns[i]);
+            if (btn) {
+                var d = parseInt(btn.getAttribute('data-depth'), 10);
                 if (d === depth) {
-                    addClass(btns[i], 'selected');
+                    btn.className = 'diff-btn selected';
                 } else {
-                    removeClass(btns[i], 'selected');
+                    btn.className = 'diff-btn';
                 }
             }
-            showError('Difficulty set to ' + depth);
-        } catch (e) {
-            showError('setDifficulty: ' + (e && e.message ? e.message : e));
         }
     }
 
     // Initialize
     function init() {
         try {
-            showError('Init starting...');
             initEngine();
-            showError('Engine init done');
 
-            // Menu buttons - use .onclick for old WebKit compatibility
-            document.getElementById('vs-ai-btn').onclick = function() {
-                gameMode = 'ai-red';
-                newGame();
-            };
+            // Menu buttons
+            var vsAiBtn = document.getElementById('vs-ai-btn');
+            if (vsAiBtn) vsAiBtn.onclick = function() { gameMode = 'ai-red'; newGame(); };
 
-            document.getElementById('vs-ai-black-btn').onclick = function() {
-                gameMode = 'ai-black';
-                newGame();
-            };
+            var vsAiBlackBtn = document.getElementById('vs-ai-black-btn');
+            if (vsAiBlackBtn) vsAiBlackBtn.onclick = function() { gameMode = 'ai-black'; newGame(); };
 
-            document.getElementById('two-player-btn').onclick = function() {
-                gameMode = 'two-player';
-                newGame();
-            };
+            var twoPlayerBtn = document.getElementById('two-player-btn');
+            if (twoPlayerBtn) twoPlayerBtn.onclick = function() { gameMode = 'two-player'; newGame(); };
 
-            // Difficulty buttons
-            var diffBtns = document.querySelectorAll('.diff-btn');
-            showError('Found ' + diffBtns.length + ' difficulty buttons');
-            for (var i = 0; i < diffBtns.length; i++) {
-                diffBtns[i].onclick = function() {
-                    setDifficulty(parseInt(this.getAttribute('data-depth'), 10));
-                };
+            // Difficulty buttons - use getElementById, no querySelectorAll
+            var diffEasy = document.getElementById('diff-easy-btn');
+            if (diffEasy) diffEasy.onclick = function() { setDifficulty(1); };
+
+            var diffMedium = document.getElementById('diff-medium-btn');
+            if (diffMedium) diffMedium.onclick = function() { setDifficulty(3); };
+
+            var diffHard = document.getElementById('diff-hard-btn');
+            if (diffHard) diffHard.onclick = function() { setDifficulty(5); };
+
+            // Game control buttons
+            var btnNew = document.getElementById('btn-new');
+            if (btnNew) btnNew.onclick = newGame;
+
+            var btnUndo = document.getElementById('btn-undo');
+            if (btnUndo) btnUndo.onclick = undoMove;
+
+            var btnFlip = document.getElementById('btn-flip');
+            if (btnFlip) btnFlip.onclick = flipBoard;
+
+            var btnMenu = document.getElementById('btn-menu');
+            if (btnMenu) btnMenu.onclick = backToMenu;
+
+            // Game over buttons
+            var playAgain = document.getElementById('play-again-btn');
+            if (playAgain) playAgain.onclick = newGame;
+
+            var backMenu = document.getElementById('back-menu-btn');
+            if (backMenu) backMenu.onclick = backToMenu;
+
+            // Set default difficulty
+            setDifficulty(3);
+
+            // Draw initial board
+            if (engine) {
+                drawBoard();
             }
-        }
 
-        // Game control buttons
-        document.getElementById('btn-new').onclick = newGame;
-        document.getElementById('btn-undo').onclick = undoMove;
-        document.getElementById('btn-flip').onclick = flipBoard;
-        document.getElementById('btn-menu').onclick = backToMenu;
-
-        // Game over buttons
-        document.getElementById('play-again-btn').onclick = newGame;
-        document.getElementById('back-menu-btn').onclick = backToMenu;
-
-        // Set default difficulty
-        setDifficulty(3);
-
-        // Draw initial board (in menu, but prepare it)
-        if (engine) {
-            showError('Drawing board...');
-            drawBoard();
-            showError('Board drawn OK');
-        }
-
-        document.getElementById('status').textContent = 'Select mode to start';
-        showError('Init complete!');
+            var statusEl = document.getElementById('status');
+            if (statusEl) statusEl.textContent = 'Select mode to start';
         } catch (e) {
             showError('init: ' + (e && e.message ? e.message : e));
         }
     }
 
-    // Start when DOM is ready
-    // Use setTimeout(0) as fallback for old WebKit without addEventListener
-    if (document.readyState === 'loading') {
-        document.onreadystatechange = function() {
-            if (document.readyState === 'complete') init();
-        };
-    } else {
-        init();
-    }
+    // Start when DOM is ready - use DOMContentLoaded like KShips
+    document.addEventListener('DOMContentLoaded', init);
 })();

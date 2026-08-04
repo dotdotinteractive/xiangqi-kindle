@@ -6,7 +6,6 @@
     <title>Xiangqi</title>
     <link rel="stylesheet" type="text/css" href="main.css">
     <script type="text/javascript">
-       // Console polyfill for old WebKit (Kindle Mesquite ~Safari 5)
        if (typeof console === 'undefined') {
            var console = { log: function() {}, error: function() {}, warn: function() {}, info: function() {} };
        }
@@ -23,37 +22,15 @@
                { "id": "KPP_MORE", "state": "enabled", "handling": "system" },
                { "id": "KPP_CLOSE", "state": "enabled", "handling": "system" }
              ]
-           },
-           "systemMenu": {
-             "clientParams": {
-               "profile": {
-                 "name": "default",
-                 "items": [
-                   { "id": "XIANGQI_NEW_GAME", "state": "enabled", "handling": "notifyApp", "label": "New Game", "position": 0 },
-                   { "id": "XIANGQI_UNDO", "state": "enabled", "handling": "notifyApp", "label": "Undo", "position": 1 },
-                   { "id": "XIANGQI_FLIP", "state": "enabled", "handling": "notifyApp", "label": "Flip Board", "position": 2 }
-                 ],
-                 "selectionMode": "none",
-                 "closeOnUse": true
-               }
-             }
            }
          };
          if (window.kindle && window.kindle.messaging) {
            window.kindle.messaging.sendMessage("com.lab126.chromebar", "configureChrome", chromebar);
          }
        };
-
        if (window.kindle && window.kindle.appmgr) {
          window.kindle.appmgr.ongo = function (ctx) {
            updateChromeBar();
-           window.kindle.messaging.receiveMessage("systemMenuItemSelected", function (type, id) {
-             switch (id) {
-               case "XIANGQI_NEW_GAME": newGame(); break;
-               case "XIANGQI_UNDO": undoMove(); break;
-               case "XIANGQI_FLIP": flipBoard(); break;
-             }
-           });
          };
        }
     </script>
@@ -63,23 +40,24 @@
         <div id="header">
             <h1>Xiangqi</h1>
             <div id="status">Loading...</div>
+            <div id="error-log"></div>
         </div>
 
-        <div id="menu-screen" class="screen">
+        <div id="menu-screen">
             <div class="menu-content">
                 <button type="button" class="menu-btn" id="vs-ai-btn">vs AI (Red)</button>
                 <button type="button" class="menu-btn" id="vs-ai-black-btn">vs AI (Black)</button>
                 <button type="button" class="menu-btn" id="two-player-btn">Two Player</button>
                 <div class="difficulty-section">
                     <h3>AI Difficulty</h3>
-                    <button type="button" class="diff-btn" data-depth="1">Easy</button>
-                    <button type="button" class="diff-btn" data-depth="3">Medium</button>
-                    <button type="button" class="diff-btn" data-depth="5">Hard</button>
+                    <button type="button" class="diff-btn" id="diff-easy-btn" data-depth="1">Easy</button>
+                    <button type="button" class="diff-btn" id="diff-medium-btn" data-depth="3">Medium</button>
+                    <button type="button" class="diff-btn" id="diff-hard-btn" data-depth="5">Hard</button>
                 </div>
             </div>
         </div>
 
-        <div id="board-screen" class="screen hidden">
+        <div id="board-screen" class="hidden">
             <div id="board-wrapper">
                 <div id="xiangqiboard"></div>
             </div>
@@ -94,7 +72,7 @@
             </div>
         </div>
 
-        <div id="game-over-screen" class="screen hidden">
+        <div id="game-over-screen" class="hidden">
             <div class="menu-content">
                 <h2 id="result-title">Game Over</h2>
                 <button type="button" class="menu-btn" id="play-again-btn">Play Again</button>
