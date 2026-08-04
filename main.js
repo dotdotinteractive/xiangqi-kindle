@@ -466,9 +466,9 @@
                 if (engine.setMaxNodes) engine.setMaxNodes(0);
 
                 if (bestMove !== 0) {
-                    /* Add randomness on lower difficulty levels so AI varies
-                       between games. Hard always plays best move. */
-                    var randomChance = (aiDepth >= 7) ? 0 : 0.3;
+                    /* Only Easy has randomness, Medium and Hard always
+                       play best move. */
+                    var randomChance = (aiDepth >= 3) ? 0 : 0.3;
                     if (Math.random() < randomChance) {
                         var allMoves = engine.generateLegalMoves();
                         if (allMoves.length > 1) {

@@ -1,5 +1,5 @@
 {
 	"items": [
-		{"name": "Install & Launch", "priority": 1, "action": "sh bin/launch.sh"}
+		{"name": "Chinese Chess 象棋", "priority": 1, "action": "sh bin/launch.sh"}
 	]
 }
