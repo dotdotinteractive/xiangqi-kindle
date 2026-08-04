@@ -73,14 +73,49 @@
     var gameResult = '*';
     var aiThinking = false;
 
+    // Error display - show errors on screen since we can't use console
+    function showError(msg) {
+        var statusEl = document.getElementById('status');
+        if (statusEl) {
+            statusEl.textContent = 'ERROR: ' + msg;
+        }
+        // Also try to append to body
+        var div = document.getElementById('error-log');
+        if (!div) {
+            div = document.createElement('div');
+            div.id = 'error-log';
+            div.style.cssText = 'color:red;font-size:12px;padding:5px;border:1px solid red;margin:5px;';
+            document.body.appendChild(div);
+        }
+        div.innerHTML += msg + '<br>';
+    }
+
+    // Safe wrapper - catches errors and displays them
+    function safe(fn, label) {
+        return function() {
+            try {
+                return fn.apply(this, arguments);
+            } catch (e) {
+                showError((label || 'error') + ': ' + (e && e.message ? e.message : e));
+                return null;
+            }
+        };
+    }
+
     // Initialize engine
     function initEngine() {
-        if (typeof Engine !== 'undefined') {
+        try {
+            if (typeof Engine === 'undefined') {
+                showError('Engine undefined - wukong.js failed to load');
+                return;
+            }
+            showError('Creating engine...');
             engine = new Engine();
+            showError('Engine created, setting board...');
             engine.setBoard(engine.START_FEN);
-        } else {
-            // Fallback: engine not loaded
-            document.getElementById('status').textContent = 'Engine not loaded!';
+            showError('Board set OK');
+        } catch (e) {
+            showError('initEngine: ' + (e && e.message ? e.message : e));
         }
     }
 
@@ -434,44 +469,54 @@
 
     // Set AI difficulty
     function setDifficulty(depth) {
-        aiDepth = depth;
-        var btns = document.querySelectorAll('.diff-btn');
-        for (var i = 0; i < btns.length; i++) {
-            var d = parseInt(btns[i].getAttribute('data-depth'), 10);
-            if (d === depth) {
-                addClass(btns[i], 'selected');
-            } else {
-                removeClass(btns[i], 'selected');
+        try {
+            aiDepth = depth;
+            var btns = document.querySelectorAll('.diff-btn');
+            for (var i = 0; i < btns.length; i++) {
+                var d = parseInt(btns[i].getAttribute('data-depth'), 10);
+                if (d === depth) {
+                    addClass(btns[i], 'selected');
+                } else {
+                    removeClass(btns[i], 'selected');
+                }
             }
+            showError('Difficulty set to ' + depth);
+        } catch (e) {
+            showError('setDifficulty: ' + (e && e.message ? e.message : e));
         }
     }
 
     // Initialize
     function init() {
-        initEngine();
+        try {
+            showError('Init starting...');
+            initEngine();
+            showError('Engine init done');
 
-        // Menu buttons - use .onclick for old WebKit compatibility
-        document.getElementById('vs-ai-btn').onclick = function() {
-            gameMode = 'ai-red';
-            newGame();
-        };
-
-        document.getElementById('vs-ai-black-btn').onclick = function() {
-            gameMode = 'ai-black';
-            newGame();
-        };
-
-        document.getElementById('two-player-btn').onclick = function() {
-            gameMode = 'two-player';
-            newGame();
-        };
-
-        // Difficulty buttons
-        var diffBtns = document.querySelectorAll('.diff-btn');
-        for (var i = 0; i < diffBtns.length; i++) {
-            diffBtns[i].onclick = function() {
-                setDifficulty(parseInt(this.getAttribute('data-depth'), 10));
+            // Menu buttons - use .onclick for old WebKit compatibility
+            document.getElementById('vs-ai-btn').onclick = function() {
+                gameMode = 'ai-red';
+                newGame();
             };
+
+            document.getElementById('vs-ai-black-btn').onclick = function() {
+                gameMode = 'ai-black';
+                newGame();
+            };
+
+            document.getElementById('two-player-btn').onclick = function() {
+                gameMode = 'two-player';
+                newGame();
+            };
+
+            // Difficulty buttons
+            var diffBtns = document.querySelectorAll('.diff-btn');
+            showError('Found ' + diffBtns.length + ' difficulty buttons');
+            for (var i = 0; i < diffBtns.length; i++) {
+                diffBtns[i].onclick = function() {
+                    setDifficulty(parseInt(this.getAttribute('data-depth'), 10));
+                };
+            }
         }
 
         // Game control buttons
@@ -489,10 +534,16 @@
 
         // Draw initial board (in menu, but prepare it)
         if (engine) {
+            showError('Drawing board...');
             drawBoard();
+            showError('Board drawn OK');
         }
 
         document.getElementById('status').textContent = 'Select mode to start';
+        showError('Init complete!');
+        } catch (e) {
+            showError('init: ' + (e && e.message ? e.message : e));
+        }
     }
 
     // Start when DOM is ready

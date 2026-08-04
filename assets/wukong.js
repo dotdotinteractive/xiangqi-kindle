@@ -938,7 +938,7 @@ var Engine = function Engine() {
   \****************************/
 
   // 16Mb default hash table size
-  var hashEntries = 20000;
+  var hashEntries = 1000;
 
   // no hash entry found constant
   var NO_HASH = 100000;

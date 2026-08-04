@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xiangqi</title>
     <link rel="stylesheet" type="text/css" href="main.css">
+    <script type="text/javascript">
+       // Console polyfill for old WebKit (Kindle Mesquite ~Safari 5)
+       if (typeof console === 'undefined') {
+           var console = { log: function() {}, error: function() {}, warn: function() {}, info: function() {} };
+       }
+    </script>
     <script type="text/javascript" src="assets/wukong.js"></script>
     <script>
        function updateChromeBar() {
