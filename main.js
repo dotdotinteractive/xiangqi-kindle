@@ -391,6 +391,7 @@
     }
 
     function init() {
+        log('init called');
         /* Bind buttons FIRST - before engine init, so UI works even if engine crashes */
         try {
             var vsAiBtn = document.getElementById('vs-ai-btn');
@@ -433,6 +434,7 @@
             if (backMenu) backMenu.onclick = backToMenu;
 
             setDifficulty(1);
+            log('buttons bound, difficulty set');
         } catch (e) {
             log('init buttons: ' + (e && e.message ? e.message : e));
         }
@@ -442,15 +444,22 @@
             initEngine();
             if (engine) {
                 drawBoard();
+                log('engine ok, board drawn');
+            } else {
+                log('engine is null');
             }
         } catch (e) {
             log('init engine: ' + (e && e.message ? e.message : e));
         }
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
+    var initCalled = false;
+    function safeInit() {
+        if (initCalled) return;
+        initCalled = true;
         init();
     }
+
+    document.addEventListener('DOMContentLoaded', safeInit);
+    safeInit();
 })();
