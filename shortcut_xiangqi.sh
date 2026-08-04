@@ -9,25 +9,42 @@ SOURCE_DIR="/mnt/us/documents/xiangqi"
 TARGET_DIR="/var/local/mesquite/xiangqi"
 DB="/var/local/appreg.db"
 APP_ID="xyz.kindlegame.xiangqi"
+MARKER="/mnt/us/documents/xiangqi_debug.txt"
 
-# Write marker file to verify script ran
-echo "Xiangqi script ran at $(date)" > /tmp/xiangqi_launch_marker.txt
+# Write marker to USB-visible location
+echo "Script started at $(date)" > "$MARKER"
 
 # Try to stop existing app
 lipc-set-prop com.lab126.appmgrd stop app://$APP_ID 2>/dev/null
+echo "After stop command" >> "$MARKER"
 sleep 1
+
+# Check if mesquite process exists
+ps | grep mesquite >> "$MARKER" 2>&1
+
+# Kill it
+killall mesquite 2>/dev/null
+echo "After killall" >> "$MARKER"
+sleep 1
+
+# Check again
+ps | grep mesquite >> "$MARKER" 2>&1
 
 # Copy files
 if [ -d "$SOURCE_DIR" ]; then
-    rm -rf "$TARGET_DIR"
+    rm -rf "$TARGET_DIR" 2>/dev/null
+    echo "After rm -rf: $?" >> "$MARKER"
     cp -r "$SOURCE_DIR" "$TARGET_DIR"
-    echo "Files copied" >> /tmp/xiangqi_launch_marker.txt
+    echo "After cp: $?" >> "$MARKER"
+    # Verify the copy
+    ls -la "$TARGET_DIR/" >> "$MARKER" 2>&1
+    echo "main.js size: $(wc -c < "$TARGET_DIR/main.js")" >> "$MARKER"
 else
-    echo "Source dir not found" >> /tmp/xiangqi_launch_marker.txt
+    echo "Source dir not found" >> "$MARKER"
     exit 1
 fi
 
-# Register in appreg.db
+# Register
 sqlite3 "$DB" <<EOF
 INSERT OR IGNORE INTO interfaces(interface) VALUES('application');
 INSERT OR IGNORE INTO handlerIds(handlerId) VALUES('$APP_ID');
@@ -38,8 +55,9 @@ INSERT OR REPLACE INTO properties(handlerId,name,value)
 INSERT OR REPLACE INTO properties(handlerId,name,value)
   VALUES('$APP_ID','supportedOrientation','U');
 EOF
-echo "Registered" >> /tmp/xiangqi_launch_marker.txt
+echo "After sqlite3: $?" >> "$MARKER"
 
 # Launch
 lipc-set-prop com.lab126.appmgrd start app://$APP_ID 2>/dev/null
-echo "Launched" >> /tmp/xiangqi_launch_marker.txt
+echo "After launch: $?" >> "$MARKER"
+echo "Script done" >> "$MARKER"
