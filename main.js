@@ -272,12 +272,12 @@
                         ctx.stroke();
                     }
 
-                    /* Highlight last moved piece with green ring */
+                    /* Highlight last moved piece with thick green ring */
                     if (sq === lastMoveTo) {
                         ctx.beginPath();
-                        ctx.arc(cx, cy, PIECE_R + 5, 0, 2 * Math.PI);
+                        ctx.arc(cx, cy, PIECE_R + 8, 0, 2 * Math.PI);
                         ctx.strokeStyle = '#0a0';
-                        ctx.lineWidth = 3;
+                        ctx.lineWidth = 6;
                         ctx.stroke();
                     }
                 } else if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
@@ -414,6 +414,14 @@
             bestMove = engine.search(aiDepth);
 
             if (bestMove !== 0) {
+                /* Add randomness: with 30% chance, pick a random legal move
+                   instead of the best one, so AI doesn't always respond the same */
+                if (Math.random() < 0.3) {
+                    var allMoves = engine.generateLegalMoves();
+                    if (allMoves.length > 1) {
+                        bestMove = allMoves[Math.floor(Math.random() * allMoves.length)].move;
+                    }
+                }
                 lastMoveFrom = engine.getSourceSquare(bestMove);
                 lastMoveTo = engine.getTargetSquare(bestMove);
                 engine.makeMove(bestMove);
