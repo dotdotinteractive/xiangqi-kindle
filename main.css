@@ -110,6 +110,8 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
 #xq-canvas {
     display: block;
     margin: 0 auto;
+    max-width: 100%;
+    height: auto;
 }
 
 /* ===== Game Menu (centered popup overlay) ===== */

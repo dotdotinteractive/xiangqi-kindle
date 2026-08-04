@@ -74,11 +74,11 @@
        All drawing (grid, pieces, dots, rings) done on canvas.
        Click handling via single canvas onclick. */
 
-    var CELL = 80;        /* distance between intersections */
-    var PAD = 20;         /* margin from canvas edge to first intersection */
-    var PIECE_R = 36;     /* piece circle radius */
-    var CW = 8 * CELL + 2 * PAD;  /* canvas width = 680 */
-    var CH = 9 * CELL + 2 * PAD;  /* canvas height = 760 */
+    var CELL = 100;       /* distance between intersections */
+    var PAD = 30;         /* margin from canvas edge to first intersection */
+    var PIECE_R = 42;     /* piece circle radius */
+    var CW = 8 * CELL + 2 * PAD;  /* canvas width = 860 */
+    var CH = 9 * CELL + 2 * PAD;  /* canvas height = 960 */
 
     function ix(col) { return PAD + col * CELL; }
     function iy(row) { return PAD + row * CELL; }
@@ -174,7 +174,7 @@
 
         /* 4. River text */
         ctx.fillStyle = '#888';
-        ctx.font = '18px sans-serif';
+        ctx.font = '22px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         var riverY = (iy(4) + iy(5)) / 2;
