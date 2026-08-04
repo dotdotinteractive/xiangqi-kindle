@@ -147,12 +147,16 @@
                     content += '<span class="river-text">漢 界</span>';
                 }
 
-                /* Piece centered in cell = on intersection */
+                /* Piece absolutely positioned in cell = on intersection.
+                   Cell is 114x114, piece is 95x95.
+                   Center: left=(114-95)/2=9.5, top=(114-95)/2=9.5
+                   Red pieces (bottom side) shifted down 5px. */
                 if (piece > 0) {
                     var pieceClass = isRed(piece) ? 'xq-piece-red' : 'xq-piece-black';
                     var pieceExtra = '';
                     if (sq === selectedSquare) pieceExtra += ' xq-selected';
-                    content += '<span class="xq-piece ' + pieceClass + pieceExtra + '">' + pieceChar(piece) + '</span>';
+                    var pieceTop = isRed(piece) ? 14.5 : 9.5;
+                    content += '<span class="xq-piece ' + pieceClass + pieceExtra + '" style="left:9.5px;top:' + pieceTop + 'px;">' + pieceChar(piece) + '</span>';
                     if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
                         content += '<span class="xq-ring"></span>';
                     }
