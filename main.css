@@ -101,114 +101,121 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     padding: 2px 0;
 }
 
-/* ===== Xiangqi Board (table-based) ===== */
-/* The board is a table of 9 columns x 10 rows.
-   Each cell represents one intersection point.
-   Grid lines are drawn with CSS borders.
-   Pieces are centered in each cell. */
+/* ===== Xiangqi Board ===== */
+/* The board is a table of 9 cols x 10 rows.
+   Each cell represents one intersection POINT.
+   Grid lines are drawn as border-right and border-bottom on each cell.
+   The lines cross at the TOP-LEFT corner of each cell.
+   Pieces are positioned at the top-left corner (on the intersection)
+   using negative margins.
+
+   Cell size = distance between intersections.
+   Piece is centered on the intersection point. */
 
 #xiangqiboard {
     display: inline-block;
+    /* Add padding so edge pieces aren't cut off */
+    padding: 26px;
 }
 
 #xiangqiboard table {
     border-collapse: collapse;
     background: #f5edd6;
+    /* Outer border = the board edge */
     border: 2px solid #000;
 }
 
 #xiangqiboard td {
-    width: 56px;
-    height: 56px;
-    text-align: center;
-    vertical-align: middle;
+    width: 60px;
+    height: 60px;
+    /* No padding - pieces use negative margin to center on corner */
+    padding: 0;
     position: relative;
     cursor: pointer;
-    font-size: 28px;
-    font-weight: bold;
-    /* Default: draw right and bottom borders = grid lines */
+    /* Draw grid lines: right and bottom borders form the grid */
     border-right: 1px solid #000;
     border-bottom: 1px solid #000;
 }
 
-/* First column: also draw left border */
-#xiangqiboard td.col0 {
-    border-left: 2px solid #000;
-}
-
-/* First row: also draw top border */
-#xiangqiboard td.row0 {
-    border-top: 2px solid #000;
-}
-
-/* Last column: thicker right border */
+/* Last column: no right border (edge of board) */
 #xiangqiboard td.col8 {
-    border-right: 2px solid #000;
+    border-right: none;
 }
 
-/* Last row: thicker bottom border */
+/* Last row: no bottom border (edge of board) */
 #xiangqiboard td.row9 {
-    border-bottom: 2px solid #000;
+    border-bottom: none;
 }
 
-/* River rows (row 4 and row 5): no vertical lines between them */
-/* Row 4: no bottom border (river gap below) */
+/* River: rows 4 and 5 have no vertical lines between them */
+/* Row 4: remove bottom border (river gap) */
 #xiangqiboard td.row4 {
     border-bottom: none;
 }
 
-/* Inner columns in river rows: no vertical border on the river side */
-/* For row 4: remove bottom border (already done) */
-/* For row 5: remove top border (which is the bottom of row 4 = river) */
-#xiangqiboard td.row5 {
-    border-top: none;
-}
-
-/* Inner columns (1-7) in river rows: no vertical border between row4 and row5 */
-/* We handle this by making row4 cells have no bottom border (done above) */
-/* and row5 inner cells have no top border */
-#xiangqiboard td.row5.col1,
-#xiangqiboard td.row5.col2,
-#xiangqiboard td.row5.col3,
-#xiangqiboard td.row5.col4,
-#xiangqiboard td.row5.col5,
-#xiangqiboard td.row5.col6,
-#xiangqiboard td.row5.col7 {
-    border-top: none;
+/* Row 5: remove top border (but we don't have top border, so nothing to do) */
+/* Actually, we need to remove the vertical lines in the river area */
+/* For inner columns in row 4 and row 5, we need the vertical line to NOT
+   cross the river. Since border-right is on each cell, the vertical line
+   from row 4's right border continues to row 5. We need to break this. */
+/* Solution: for row 4, inner columns get border-right but NO border-bottom */
+/* For row 5, inner columns get border-right but the top of row 5 has no line */
+/* Since we only draw right and bottom, the river gap is created by
+   removing border-bottom from row 4. The vertical lines still continue
+   through row 5's border-right. This is actually correct for Xiangqi -
+   the vertical lines are broken only in the river area. */
+/* Wait, in real Xiangqi, the vertical lines ARE broken at the river.
+   Only the outer two vertical lines continue through the river. */
+/* To break inner vertical lines at river: remove border-right from
+   row 4 inner columns AND row 5 inner columns? No, that would remove
+   the lines entirely. */
+/* Actually: the vertical line between col 1 and col 2 is drawn by
+   col 1's border-right. It appears in every row. To break it at the river,
+   we need to remove border-right from col 1 in row 4 (so no line between
+   row 4 and row 5 at that x position). But border-right is vertical,
+   not horizontal. The river gap is horizontal - we need to remove
+   the HORIZONTAL line between row 4 and row 5, which is row 4's
+   border-bottom. We already did that. */
+/* The VERTICAL lines should continue through the river for the outer
+   columns (0 and 8) but be BROKEN for inner columns (1-7). */
+/* To break vertical lines at river for inner columns:
+   remove border-right from row 4 and row 5 for cols 1-7 */
+#xiangqiboard td.row4.col1, #xiangqiboard td.row4.col2,
+#xiangqiboard td.row4.col3, #xiangqiboard td.row4.col4,
+#xiangqiboard td.row4.col5, #xiangqiboard td.row4.col6,
+#xiangqiboard td.row4.col7 {
+    /* Keep border-right but remove border-bottom for river */
+    border-bottom: none;
 }
 
 /* River text */
 .river-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    margin-left: -60px;
+    margin-top: -8px;
     font-size: 14px;
     color: #888;
     font-weight: normal;
-    letter-spacing: 4px;
-}
-
-/* Palace diagonal markers - using text characters as a simple approach */
-.palace-diag {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    font-size: 56px;
-    line-height: 56px;
-    color: #000;
+    text-align: center;
     pointer-events: none;
-    overflow: hidden;
 }
 
-/* Piece rendering */
+/* Piece - positioned at top-left corner (intersection point) */
 .xq-piece {
-    display: inline-block;
-    width: 48px;
-    height: 48px;
-    line-height: 48px;
+    position: absolute;
+    top: -25px;
+    left: -25px;
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
     text-align: center;
     font-size: 28px;
     font-weight: bold;
     border-radius: 50%;
     border: 2px solid #000;
-    position: relative;
     z-index: 2;
 }
 
@@ -231,34 +238,42 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     background: #ccc !important;
 }
 
-/* Legal move dot */
+/* Legal move dot - at intersection */
 .xq-dot {
-    display: inline-block;
+    position: absolute;
+    top: -7px;
+    left: -7px;
     width: 14px;
     height: 14px;
     border-radius: 50%;
     background: #555;
     opacity: 0.5;
-}
-
-/* Legal capture ring */
-.xq-ring {
-    display: inline-block;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 3px solid #c00;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    margin-left: -25px;
-    margin-top: -25px;
     z-index: 1;
 }
 
-/* Last move highlight */
-.xq-last {
-    background: #e0d8b8;
+/* Legal capture ring - at intersection */
+.xq-ring {
+    position: absolute;
+    top: -27px;
+    left: -27px;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 3px solid #c00;
+    z-index: 1;
+}
+
+/* Last move marker */
+.xq-last-marker {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #999;
+    opacity: 0.3;
+    z-index: 1;
 }
 
 /* ===== Game Menu (popup) ===== */

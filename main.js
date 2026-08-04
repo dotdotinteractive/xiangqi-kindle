@@ -94,6 +94,10 @@
             }
         }
 
+        /* Board: 9x10 table, each cell = one intersection.
+           Grid lines: border-right + border-bottom on each cell.
+           Lines cross at top-left corner of each cell = intersection point.
+           Pieces positioned at top-left corner using negative margin. */
         var html = '<table cellspacing="0" cellpadding="0"><tbody>';
 
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
@@ -104,35 +108,29 @@
                 var sq = squareFromCoord(actualRow, actualFile);
                 var piece = engine.getPiece(sq);
 
-                /* Cell classes for border drawing */
                 var classes = 'col' + file + ' row' + displayRow;
-
-                /* Cell content */
                 var content = '';
 
-                /* River text in middle rows */
+                /* River text between row 4 and row 5 */
                 if (displayRow === 4 && file === 1) {
                     content += '<span class="river-text">楚 河</span>';
                 } else if (displayRow === 4 && file === 6) {
                     content += '<span class="river-text">漢 界</span>';
                 }
 
-                /* Piece */
+                /* Piece at intersection (top-left corner of cell) */
                 if (piece > 0) {
                     var pieceClass = isRed(piece) ? 'xq-piece-red' : 'xq-piece-black';
                     var pieceExtra = '';
                     if (sq === selectedSquare) pieceExtra += ' xq-selected';
-                    if (sq === lastMoveFrom || sq === lastMoveTo) pieceExtra += ' xq-last';
                     content += '<span class="xq-piece ' + pieceClass + pieceExtra + '">' + pieceChar(piece) + '</span>';
-                    /* If this is a legal capture target, add ring */
                     if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
                         content += '<span class="xq-ring"></span>';
                     }
                 } else if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
-                    /* Legal move dot on empty intersection */
                     content += '<span class="xq-dot"></span>';
                 } else if (sq === lastMoveFrom || sq === lastMoveTo) {
-                    content += '<span class="xq-dot" style="background:#999;opacity:0.3;"></span>';
+                    content += '<span class="xq-last-marker"></span>';
                 }
 
                 html += '<td class="' + classes + '" onclick="tapSquare(' + sq + ')">' + content + '</td>';
