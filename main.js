@@ -16,7 +16,7 @@
 
     var engine = null;
     var gameMode = 'ai-red';
-    var aiDepth = 3;
+    var aiDepth = 1;
     var flip = 0;
     var selectedSquare = null;
     var clickLock = false;
@@ -433,7 +433,7 @@
             var backMenu = document.getElementById('back-menu-btn');
             if (backMenu) backMenu.onclick = backToMenu;
 
-            setDifficulty(3);
+            setDifficulty(1);
 
             if (engine) {
                 drawBoard();
