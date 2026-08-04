@@ -414,9 +414,10 @@
             bestMove = engine.search(aiDepth);
 
             if (bestMove !== 0) {
-                /* Add randomness: with 30% chance, pick a random legal move
-                   instead of the best one, so AI doesn't always respond the same */
-                if (Math.random() < 0.3) {
+                /* Add randomness on lower difficulty levels so AI varies
+                   between games. Hard (depth 5) always plays best move. */
+                var randomChance = (aiDepth >= 5) ? 0 : 0.3;
+                if (Math.random() < randomChance) {
                     var allMoves = engine.generateLegalMoves();
                     if (allMoves.length > 1) {
                         bestMove = allMoves[Math.floor(Math.random() * allMoves.length)].move;
