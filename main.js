@@ -720,7 +720,7 @@
             var backMenu = document.getElementById('back-menu-btn');
             if (backMenu) backMenu.onclick = backToMenu;
 
-            setDifficulty(1);
+            setDifficulty(3);
             log('buttons bound, difficulty set');
         } catch (e) {
             log('init buttons: ' + (e && e.message ? e.message : e));
