@@ -150,13 +150,15 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     border-top: 2px solid #000;
 }
 
-/* Last column: NO right border (col7's border-right already draws the 9th vertical line) */
+/* Last column: zero width (no gap, just holds last intersection's pieces) */
 #xiangqiboard td.col8 {
+    width: 0;
     border-right: none;
 }
 
-/* Last row: NO bottom border (row8's border-bottom already draws the 10th horizontal line) */
+/* Last row: zero height (no gap, just holds last intersection's pieces) */
 #xiangqiboard td.row9 {
+    height: 0;
     border-bottom: none;
 }
 
