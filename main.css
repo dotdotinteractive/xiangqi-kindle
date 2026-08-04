@@ -230,8 +230,8 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     color: #c00;
     border-color: #c00;
     background: #fff;
-    position: relative;
-    top: 5px; /* shift red pieces down ~5% of 95px */
+    -webkit-transform: translateY(5px); /* shift red pieces down ~5% */
+    transform: translateY(5px);
 }
 
 .xq-piece-black {
