@@ -94,86 +94,122 @@
             }
         }
 
-        /* Two-table approach (based on leidZhang/JSXiangqi):
-           1. Grid table: 9 rows x 8 cols, with borders = grid lines
-              8 cols = 8 gaps = 9 vertical lines
-              9 rows = 9 gaps = 10 horizontal lines
-              Row 4 (river): no borders = river gap
-           2. Piece table: 10 rows x 9 cols, no borders, transparent
-              Each cell = one intersection, pieces centered = on intersections
-           Grid table is offset by half a cell so lines align with piece centers.
+        /* All-absolute-positioning board. No CSS layout, no tables.
+           Everything is a div with inline style coordinates.
 
-           Palace diagonals drawn as rotated divs inside grid cells.
-           Top palace: grid rows 0-2, cols 3-5
-           Bottom palace: grid rows 5-7, cols 3-5 */
+           Coordinate system: intersection (col,row) is at pixel:
+             x = ORIGIN + col * CELL
+             y = ORIGIN + row * CELL
+           where ORIGIN = CELL/2 (half cell margin inside container). */
 
-        /* === 1. Grid table (visible lines) === */
-        var gridHtml = '<table class="grid-table" cellspacing="0" cellpadding="0"><tbody>';
-        for (var gr = 0; gr < 9; gr++) {
-            gridHtml += '<tr>';
-            for (var gc = 0; gc < 8; gc++) {
-                var gClass = 'gcell';
-                if (gr === 4) gClass += ' river-row'; /* river: no border */
-                /* Palace diagonals in grid cells.
-                   Top palace: piece rows 0-2, cols 3-5 = grid rows 0-1, cols 3-4
-                   Bottom palace: piece rows 7-9, cols 3-5 = grid rows 7-8, cols 3-4 */
-                var diag = '';
-                if (gr === 0 && gc === 3) diag = '<span class="pdiag pdiag-br"></span>';
-                if (gr === 0 && gc === 4) diag = '<span class="pdiag pdiag-bl"></span>';
-                if (gr === 7 && gc === 3) diag = '<span class="pdiag pdiag-br"></span>';
-                if (gr === 7 && gc === 4) diag = '<span class="pdiag pdiag-bl"></span>';
-                gridHtml += '<td class="' + gClass + '">' + diag + '</td>';
-            }
-            gridHtml += '</tr>';
+        var CELL = 114;           /* distance between intersections */
+        var HALF = 57;            /* CELL / 2 */
+        var PIECE = 95;           /* piece diameter */
+        var POFF = 47.5;          /* PIECE / 2 */
+        var NLINES = 9;           /* vertical lines (cols 0-8) */
+        var HLINES = 10;          /* horizontal lines (rows 0-9) */
+        var BW = 8 * CELL;        /* board width = 912 */
+        var BH = 9 * CELL;        /* board height = 1026 */
+        var CW = BW + CELL;       /* container width = 1026 */
+        var CH = BH + CELL;       /* container height = 1140 */
+        var DIAG = 2 * CELL * 1.4142; /* diagonal length ≈ 322 */
+
+        /* Intersection pixel coordinates */
+        function ix(col) { return HALF + col * CELL; }
+        function iy(row) { return HALF + row * CELL; }
+
+        var h = '';
+
+        /* Set container dimensions */
+        boardEl.style.position = 'relative';
+        boardEl.style.width = CW + 'px';
+        boardEl.style.height = CH + 'px';
+        boardEl.style.margin = '0 auto';
+        boardEl.style.padding = '0';
+
+        /* 1. Board background (tan) */
+        h += '<div style="position:absolute;left:' + HALF + 'px;top:' + HALF + 'px;width:' + BW + 'px;height:' + BH + 'px;background:#f5edd6;"></div>';
+
+        /* 2. Horizontal lines (10 lines, full width, 2px thick) */
+        for (var row = 0; row < HLINES; row++) {
+            h += '<div style="position:absolute;left:' + HALF + 'px;top:' + (iy(row) - 1) + 'px;width:' + BW + 'px;height:2px;background:#000;"></div>';
         }
-        gridHtml += '</tbody></table>';
 
-        /* === 2. Piece table (transparent, on top) === */
-        var pieceHtml = '<table class="piece-table" cellspacing="0" cellpadding="0"><tbody>';
+        /* 3. Vertical lines (9 lines)
+              Outer (col 0, col 8): full height
+              Inner (col 1-7): break at river (row 4 to row 5) */
+        for (var col = 0; col < NLINES; col++) {
+            var lx = ix(col) - 1;
+            if (col === 0 || col === NLINES - 1) {
+                h += '<div style="position:absolute;left:' + lx + 'px;top:' + HALF + 'px;width:2px;height:' + BH + 'px;background:#000;"></div>';
+            } else {
+                var topH = 4 * CELL;
+                var botY = iy(5);
+                var botH = 4 * CELL;
+                h += '<div style="position:absolute;left:' + lx + 'px;top:' + HALF + 'px;width:2px;height:' + topH + 'px;background:#000;"></div>';
+                h += '<div style="position:absolute;left:' + lx + 'px;top:' + botY + 'px;width:2px;height:' + botH + 'px;background:#000;"></div>';
+            }
+        }
+
+        /* 4. Palace diagonals (X in top and bottom 3x3 palace)
+              Top: cols 3-5, rows 0-2. Bottom: cols 3-5, rows 7-9.
+              Each diagonal: 2 cells = 228px, length = 228*sqrt(2) ≈ 322px
+              Rotated 45deg from intersection point. */
+        function diag(x, y, deg) {
+            return '<div style="position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + DIAG + 'px;height:2px;background:#000;-webkit-transform-origin:0 0;transform-origin:0 0;-webkit-transform:rotate(' + deg + 'deg);transform:rotate(' + deg + 'deg);"></div>';
+        }
+        /* Top palace: (3,0)->(5,2) = 45deg, (5,0)->(3,2) = -45deg */
+        h += diag(ix(3), iy(0), 45);
+        h += diag(ix(5), iy(0), -45);
+        /* Bottom palace: (3,7)->(5,9) = 45deg, (5,7)->(3,9) = -45deg */
+        h += diag(ix(3), iy(7), 45);
+        h += diag(ix(5), iy(7), -45);
+
+        /* 5. River text (between row 4 and row 5, centered in each half) */
+        var riverY = iy(4) + HALF; /* midpoint of river */
+        h += '<div style="position:absolute;left:' + (ix(2) - 50) + 'px;top:' + (riverY - 14) + 'px;width:100px;text-align:center;font-size:27px;color:#888;pointer-events:none;">楚 河</div>';
+        h += '<div style="position:absolute;left:' + (ix(6) - 50) + 'px;top:' + (riverY - 14) + 'px;width:100px;text-align:center;font-size:27px;color:#888;pointer-events:none;">漢 界</div>';
+
+        /* 6. Pieces, dots, rings, markers, and click areas */
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
-            pieceHtml += '<tr>';
             for (var file = 0; file < COLS; file++) {
                 var actualRow = flip ? (ROWS - 1 - displayRow) : displayRow;
                 var actualFile = flip ? (COLS - 1 - file) : file;
                 var sq = squareFromCoord(actualRow, actualFile);
                 var piece = engine.getPiece(sq);
 
-                var content = '';
+                var cx = ix(file);
+                var cy = iy(displayRow);
 
-                /* River text in the middle rows */
-                if (displayRow === 4 && file === 2) {
-                    content += '<span class="river-text">楚 河</span>';
-                } else if (displayRow === 4 && file === 6) {
-                    content += '<span class="river-text">漢 界</span>';
-                }
+                /* Click area (invisible, centered on intersection) */
+                h += '<div style="position:absolute;left:' + (cx - HALF) + 'px;top:' + (cy - HALF) + 'px;width:' + CELL + 'px;height:' + CELL + 'px;cursor:pointer;" onclick="tapSquare(' + sq + ')"></div>';
 
-                /* Piece absolutely positioned in cell = on intersection.
-                   Cell is 114x114, piece is 95x95.
-                   Center: left=(114-95)/2=9.5, top=(114-95)/2=9.5
-                   Red pieces (bottom side) shifted down 5px. */
                 if (piece > 0) {
-                    var pieceClass = isRed(piece) ? 'xq-piece-red' : 'xq-piece-black';
-                    var pieceExtra = '';
-                    if (sq === selectedSquare) pieceExtra += ' xq-selected';
-                    var pieceTop = isRed(piece) ? 14.5 : 9.5;
-                    content += '<span class="xq-piece ' + pieceClass + pieceExtra + '" style="left:9.5px;top:' + pieceTop + 'px;">' + pieceChar(piece) + '</span>';
+                    var isRedPiece = isRed(piece);
+                    /* Red pieces shifted down 5px from intersection center */
+                    var pTop = cy - POFF + (isRedPiece ? 5 : 0);
+                    var pLeft = cx - POFF;
+                    var bg = isRedPiece ? '#fff' : '#000';
+                    var clr = isRedPiece ? '#c00' : '#fff';
+                    var bdr = isRedPiece ? '#c00' : '#000';
+                    var selBg = (sq === selectedSquare) ? 'background:#ccc;' : 'background:' + bg + ';';
+                    h += '<div style="position:absolute;left:' + pLeft + 'px;top:' + pTop + 'px;width:' + PIECE + 'px;height:' + PIECE + 'px;line-height:85px;text-align:center;font-size:53px;font-weight:bold;border-radius:50%;border:3px solid ' + bdr + ';box-sizing:border-box;' + selBg + 'color:' + clr + ';z-index:2;">' + pieceChar(piece) + '</div>';
+
                     if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
-                        content += '<span class="xq-ring"></span>';
+                        /* Capture ring */
+                        h += '<div style="position:absolute;left:' + (cx - 51) + 'px;top:' + (cy - 51) + 'px;width:102px;height:102px;border-radius:50%;border:4px solid #c00;z-index:1;"></div>';
                     }
                 } else if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
-                    content += '<span class="xq-dot"></span>';
+                    /* Legal move dot */
+                    h += '<div style="position:absolute;left:' + (cx - 13.5) + 'px;top:' + (cy - 13.5) + 'px;width:27px;height:27px;border-radius:50%;background:#555;opacity:0.5;z-index:1;"></div>';
                 } else if (sq === lastMoveFrom || sq === lastMoveTo) {
-                    content += '<span class="xq-last-marker"></span>';
+                    /* Last move marker */
+                    h += '<div style="position:absolute;left:' + (cx - 13.5) + 'px;top:' + (cy - 13.5) + 'px;width:27px;height:27px;border-radius:50%;background:#999;opacity:0.3;z-index:1;"></div>';
                 }
-
-                var pClass = 'pcell';
-                pieceHtml += '<td class="' + pClass + '" onclick="tapSquare(' + sq + ')">' + content + '</td>';
             }
-            pieceHtml += '</tr>';
         }
-        pieceHtml += '</tbody></table>';
 
-        boardEl.innerHTML = gridHtml + pieceHtml;
+        boardEl.innerHTML = h;
     }
 
     window.tapSquare = function(sq) {
