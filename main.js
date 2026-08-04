@@ -404,6 +404,14 @@
         return 2000;                      /* Easy: 2s */
     }
 
+    /* Node count limit - reliable on Kindle where Date.now() may be broken.
+       This is the primary mechanism for stopping search. */
+    function aiNodeLimit() {
+        if (aiDepth >= 7) return 500000;  /* Hard: 500K nodes */
+        if (aiDepth >= 3) return 100000;  /* Medium: 100K nodes */
+        return 20000;                      /* Easy: 20K nodes */
+    }
+
     function aiMove() {
         if (!engine || gameResult !== '*') return;
         aiThinking = true;
@@ -444,10 +452,15 @@
                 tc.stopTime = new Date().getTime() + timeLimit;
                 engine.setTimeControl(tc);
 
+                /* Set node count limit - primary stop mechanism on Kindle
+                   where Date.now() may be unreliable */
+                if (engine.setMaxNodes) engine.setMaxNodes(aiNodeLimit());
+
                 var bestMove = engine.search(aiDepth);
 
-                /* Clear progress callback */
+                /* Clear progress callback and node limit */
                 if (engine.setProgressCallback) engine.setProgressCallback(null);
+                if (engine.setMaxNodes) engine.setMaxNodes(0);
 
                 if (bestMove !== 0) {
                     /* Add randomness on lower difficulty levels so AI varies

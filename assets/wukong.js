@@ -1107,12 +1107,14 @@ var Engine = function Engine() {
   var onCheckProgress = null;
   var _searchStartTime = 0;
   var _searchTimeLimit = 0;
+  var _maxNodes = 0;  /* node count limit - reliable on all platforms */
   function checkTime() {
+    /* Node count limit - always works, no Date.now() dependency */
+    if (_maxNodes > 0 && nodes >= _maxNodes) timing.stopped = 1;
     if (timing.timeSet == 1) {
       var now = Date.now();
       if (typeof now !== 'number' || isNaN(now)) now = new Date().getTime();
       if (now > timing.stopTime) timing.stopped = 1;
-      /* Also check against our own time limit as backup */
       if (_searchTimeLimit > 0) {
         var elapsed = now - _searchStartTime;
         if (elapsed > _searchTimeLimit) timing.stopped = 1;
@@ -1521,6 +1523,8 @@ var Engine = function Engine() {
     _debug();
   }, _ref.setProgressCallback = function setProgressCallback(cb) {
     onCheckProgress = cb;
+  }, _ref.setMaxNodes = function setMaxNodes(n) {
+    _maxNodes = n;
   }, _ref;
 };
 
