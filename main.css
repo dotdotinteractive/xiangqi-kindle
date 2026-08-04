@@ -222,6 +222,9 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     border: 3px solid #000;
     vertical-align: middle;
     cursor: pointer;
+    /* Shift text up ~10% to center it in the circle */
+    position: relative;
+    top: -5px;
 }
 
 .xq-piece-red {
