@@ -399,7 +399,7 @@
 
     /* AI time limit based on difficulty (ms) */
     function aiTimeLimit() {
-        if (aiDepth >= 7) return 15000;  /* Hard: 15s */
+        if (aiDepth >= 7) return 10000;  /* Hard: 10s */
         if (aiDepth >= 3) return 4000;   /* Medium: 4s */
         return 2000;                      /* Easy: 2s */
     }
