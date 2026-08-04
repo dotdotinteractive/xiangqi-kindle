@@ -54,36 +54,11 @@
             </div>
         </div>
     </div>
-    <div id="debug-output" style="position:fixed;top:0;right:0;background:yellow;font-size:12px;padding:10px;z-index:9999;max-width:600px;"></div>
     <script type="text/javascript" src="main.js"></script>
     <script type="text/javascript">
        setTimeout(function() {
            var btn = document.getElementById('vs-ai-btn');
            if (btn && btn.onclick) btn.onclick();
-           setTimeout(function() {
-               var grid = document.querySelector('.grid-table');
-               var piece = document.querySelector('.piece-table');
-               var container = document.getElementById('xiangqiboard');
-               var dbg = document.getElementById('debug-output');
-               function info(msg) { dbg.innerHTML += msg + '<br>'; }
-               
-               if (!grid || !piece) { info('Tables not found!'); return; }
-               
-               var gr = grid.getBoundingClientRect();
-               var pr = piece.getBoundingClientRect();
-               var cr = container.getBoundingClientRect();
-               
-               info('Container: L=' + cr.left + ' T=' + cr.top + ' W=' + cr.width);
-               info('Grid: L=' + gr.left + ' T=' + gr.top + ' W=' + gr.width + ' H=' + gr.height);
-               info('Piece: L=' + pr.left + ' T=' + pr.top + ' W=' + pr.width + ' H=' + pr.height);
-               
-               var fg = document.querySelector('.gcell').getBoundingClientRect();
-               var fp = document.querySelector('.pcell').getBoundingClientRect();
-               info('First grid cell: L=' + fg.left + ' T=' + fg.top);
-               info('First piece cell: L=' + fp.left + ' T=' + fp.top + ' center=(' + (fp.left+fp.width/2) + ',' + (fp.top+fp.height/2) + ')');
-               info('X diff: ' + ((fp.left+fp.width/2) - fg.left));
-               info('Y diff: ' + ((fp.top+fp.height/2) - fg.top));
-           }, 500);
        }, 500);
     </script>
 </body>
