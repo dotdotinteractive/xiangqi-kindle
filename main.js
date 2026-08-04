@@ -51,9 +51,24 @@
         }
     }
 
+    var debugLog = '';
+
     function log(msg) {
-        var el = document.getElementById('error-log');
-        if (el) el.innerHTML += msg + '<br>';
+        debugLog += msg + '\n';
+    }
+
+    function showDebugPopup() {
+        var existing = document.getElementById('debug-popup');
+        if (existing) existing.parentNode.removeChild(existing);
+        var popup = document.createElement('div');
+        popup.id = 'debug-popup';
+        popup.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#fff;border:2px solid #000;padding:12px;font-size:14px;z-index:99999;max-height:80%;overflow:auto;white-space:pre-wrap;';
+        popup.innerHTML = '<b>Debug Info</b>\n\n' + (debugLog || '(empty)') + '\n\n<button id="debug-close" style="margin-top:10px;padding:8px 20px;font-size:16px;">Close</button>';
+        document.body.appendChild(popup);
+        var closeBtn = document.getElementById('debug-close');
+        if (closeBtn) closeBtn.onclick = function() {
+            popup.parentNode.removeChild(popup);
+        };
     }
 
     function initEngine() {
@@ -81,25 +96,23 @@
 
     function calcBoardSize() {
         /* Determine available screen space. On Kindle Paperwhite:
-           screen = 758x1024. Use the most reliable dimension available.
+           screen = 758x1024.
            Board needs 8*CELL + 2*PAD wide, 9*CELL + 2*PAD tall.
-           PAD = CELL / 3 (proportional margin).
-           Width  = 8.667 * CELL, height = 9.667 * CELL.
-           Pick the smaller CELL that fits both dimensions.
-           Use 95% of screen to leave safety margin for system UI. */
+           PAD must be >= PIECE_R so edge pieces aren't clipped.
+           PIECE_R = CELL * 0.42, PAD = PIECE_R + 3 (small margin).
+           So width  = 8.84*CELL + 6, height = 9.84*CELL + 6.
+           Use 95% of screen for system UI safety margin. */
         var sw = screen.width || 758;
         var sh = screen.height || 1024;
         var availW = Math.floor(sw * 0.95);
         var availH = Math.floor((sh - 30) * 0.95); /* status bar ~30px */
-        var cellByW = availW / (8 + 2/3);
-        var cellByH = availH / (9 + 2/3);
+        var cellByW = (availW - 6) / 8.84;
+        var cellByH = (availH - 6) / 9.84;
         CELL = Math.floor(Math.min(cellByW, cellByH));
-        PAD = Math.floor(CELL / 3);
         PIECE_R = Math.floor(CELL * 0.42);
+        PAD = PIECE_R + 3; /* ensure pieces at edges aren't clipped */
         CW = 8 * CELL + 2 * PAD;
         CH = 9 * CELL + 2 * PAD;
-        /* Debug: log calculated values */
-        log('calcBoard: screen=' + sw + 'x' + sh + ' CELL=' + CELL + ' PAD=' + PAD + ' CW=' + CW + ' CH=' + CH);
     }
 
     function ix(col) { return PAD + col * CELL; }
@@ -593,6 +606,9 @@
 
             var btnPgn = document.getElementById('btn-pgn');
             if (btnPgn) btnPgn.onclick = function() { togglePgn(); };
+
+            var btnDebug = document.getElementById('btn-debug');
+            if (btnDebug) btnDebug.onclick = function() { toggleMenu(); showDebugPopup(); };
 
             var btnMenu = document.getElementById('btn-menu');
             if (btnMenu) btnMenu.onclick = function() { toggleMenu(); backToMenu(); };
