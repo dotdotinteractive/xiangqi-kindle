@@ -117,8 +117,6 @@
                     content += '<span class="river-text">漢 界</span>';
                 }
 
-                }
-
                 /* Piece */
                 if (piece > 0) {
                     var pieceClass = isRed(piece) ? 'xq-piece-red' : 'xq-piece-black';
