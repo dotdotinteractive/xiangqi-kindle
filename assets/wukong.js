@@ -1102,8 +1102,12 @@ var Engine = function Engine() {
   }
 
   // handle time control
+  // onCheckProgress callback (set by UI) is called every 2048 nodes
+  // to allow progress display updates during search
+  var onCheckProgress = null;
   function checkTime() {
     if (timing.timeSet == 1 && Date.now() > timing.stopTime) timing.stopped = 1;
+    if (onCheckProgress) onCheckProgress(nodes, guiDepth, guiScore);
   }
 
   // position repetition detection
@@ -1497,6 +1501,8 @@ var Engine = function Engine() {
     _initHashTable();
   }, _ref.debug = function debug() {
     _debug();
+  }, _ref.setProgressCallback = function setProgressCallback(cb) {
+    onCheckProgress = cb;
   }, _ref;
 };
 

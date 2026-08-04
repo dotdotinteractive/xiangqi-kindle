@@ -408,9 +408,26 @@
         if (!engine || gameResult !== '*') return;
         aiThinking = true;
         var timeLimit = aiTimeLimit();
-        var secs = Math.floor(timeLimit / 1000);
+        var totalSecs = Math.floor(timeLimit / 1000);
         var st = document.getElementById('status');
-        if (st) st.textContent = 'AI thinking... (up to ' + secs + 's)';
+        if (st) st.textContent = 'AI thinking... (' + totalSecs + 's)';
+
+        /* Set up progress callback - called by engine every 2048 nodes.
+           This is the only chance to update UI during synchronous search.
+           Old WebKit may repaint text changes even during blocking code. */
+        var searchStartTime = new Date().getTime();
+        if (engine.setProgressCallback) {
+            engine.setProgressCallback(function(nodes, depth, score) {
+                var elapsed = Math.floor((new Date().getTime() - searchStartTime) / 1000);
+                var remaining = totalSecs - elapsed;
+                if (remaining < 0) remaining = 0;
+                if (st) {
+                    st.textContent = 'AI: depth ' + depth + '/' + aiDepth +
+                                     '  ' + elapsed + 's/' + totalSecs + 's' +
+                                     '  ' + (nodes / 1000) + 'K nodes';
+                }
+            });
+        }
 
         /* Use setTimeout to let browser repaint the status text
            before the blocking search call freezes the UI. */
@@ -423,6 +440,9 @@
                 engine.setTimeControl(tc);
 
                 var bestMove = engine.search(aiDepth);
+
+                /* Clear progress callback */
+                if (engine.setProgressCallback) engine.setProgressCallback(null);
 
                 if (bestMove !== 0) {
                     /* Add randomness on lower difficulty levels so AI varies
@@ -454,6 +474,7 @@
                 checkGameOver();
             } catch (e) {
                 aiThinking = false;
+                if (engine.setProgressCallback) engine.setProgressCallback(null);
                 log('aiMove: ' + (e && e.message ? e.message : e));
             }
         }, 50);
