@@ -271,14 +271,23 @@
                         ctx.lineWidth = 3;
                         ctx.stroke();
                     }
+
+                    /* Highlight last moved piece with green ring */
+                    if (sq === lastMoveTo) {
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, PIECE_R + 5, 0, 2 * Math.PI);
+                        ctx.strokeStyle = '#0a0';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    }
                 } else if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
                     /* Legal move dot */
                     ctx.beginPath();
                     ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
                     ctx.fillStyle = '#555';
                     ctx.fill();
-                } else if (sq === lastMoveFrom || sq === lastMoveTo) {
-                    /* Last move marker */
+                } else if (sq === lastMoveFrom) {
+                    /* Last move origin marker */
                     ctx.beginPath();
                     ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
                     ctx.fillStyle = '#999';
