@@ -72,13 +72,35 @@
     /* Canvas-based board rendering.
        Single <canvas> element - fast on Kindle's old WebKit.
        All drawing (grid, pieces, dots, rings) done on canvas.
-       Click handling via single canvas onclick. */
+       Click handling via single canvas onclick.
 
-    var CELL = 100;       /* distance between intersections */
-    var PAD = 30;         /* margin from canvas edge to first intersection */
-    var PIECE_R = 42;     /* piece circle radius */
-    var CW = 8 * CELL + 2 * PAD;  /* canvas width = 860 */
-    var CH = 9 * CELL + 2 * PAD;  /* canvas height = 960 */
+       Board size is calculated from the actual screen width so the
+       canvas always fits without CSS scaling (unreliable on old WebKit). */
+
+    var CELL, PAD, PIECE_R, CW, CH;
+
+    function calcBoardSize() {
+        /* Determine available screen space. On Kindle Paperwhite:
+           screen = 758x1024. Use the most reliable dimension available.
+           Board needs 8*CELL + 2*PAD wide, 9*CELL + 2*PAD tall.
+           PAD = CELL / 3 (proportional margin).
+           Width  = 8.667 * CELL, height = 9.667 * CELL.
+           Pick the smaller CELL that fits both dimensions.
+           Use 95% of screen to leave safety margin for system UI. */
+        var sw = screen.width || 758;
+        var sh = screen.height || 1024;
+        var availW = Math.floor(sw * 0.95);
+        var availH = Math.floor((sh - 30) * 0.95); /* status bar ~30px */
+        var cellByW = availW / (8 + 2/3);
+        var cellByH = availH / (9 + 2/3);
+        CELL = Math.floor(Math.min(cellByW, cellByH));
+        PAD = Math.floor(CELL / 3);
+        PIECE_R = Math.floor(CELL * 0.42);
+        CW = 8 * CELL + 2 * PAD;
+        CH = 9 * CELL + 2 * PAD;
+        /* Debug: log calculated values */
+        log('calcBoard: screen=' + sw + 'x' + sh + ' CELL=' + CELL + ' PAD=' + PAD + ' CW=' + CW + ' CH=' + CH);
+    }
 
     function ix(col) { return PAD + col * CELL; }
     function iy(row) { return PAD + row * CELL; }
@@ -87,6 +109,9 @@
         if (!engine) return;
         var boardEl = document.getElementById('xiangqiboard');
         if (!boardEl) return;
+
+        /* Calculate board size to fit current screen */
+        calcBoardSize();
 
         /* Pre-compute legal move targets */
         var legalTargets = {};
@@ -174,7 +199,7 @@
 
         /* 4. River text */
         ctx.fillStyle = '#888';
-        ctx.font = '22px sans-serif';
+        ctx.font = Math.floor(CELL * 0.22) + 'px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         var riverY = (iy(4) + iy(5)) / 2;
@@ -212,7 +237,7 @@
 
                     /* Piece text */
                     ctx.fillStyle = isRedPiece ? '#c00' : '#fff';
-                    ctx.font = 'bold 48px sans-serif';
+                    ctx.font = 'bold ' + Math.floor(CELL * 0.48) + 'px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(pieceChar(piece), cx, cy);

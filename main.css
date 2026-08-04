@@ -169,7 +169,11 @@ h3 { font-size: 1.0em; margin: 8px 0 4px 0; }
     margin: 20px 0;
 }
 
-/* Error log - hidden, no space */
+/* Error log - visible for debugging */
 #error-log {
-    display: none !important;
+    font-size: 10px;
+    color: #c00;
+    padding: 2px 4px;
+    max-height: 60px;
+    overflow: auto;
 }
