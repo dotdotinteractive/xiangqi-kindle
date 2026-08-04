@@ -71,6 +71,24 @@
         };
     }
 
+    function showAboutPopup() {
+        var existing = document.getElementById('about-popup');
+        if (existing) existing.parentNode.removeChild(existing);
+        var popup = document.createElement('div');
+        popup.id = 'about-popup';
+        popup.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#fff;border:2px solid #000;padding:16px;font-size:16px;z-index:99999;max-height:80%;overflow:auto;';
+        popup.innerHTML = '<b style="font-size:20px;">Xiangqi 象棋</b><br><br>' +
+            'Chinese Chess for Kindle<br><br>' +
+            '<b>Author:</b> Hank (killea@gmail.com)<br>' +
+            '<b>GitHub:</b> github.com/dotdotinteractive/xiangqi-kindle<br><br>' +
+            '<button id="about-close" style="margin-top:10px;padding:8px 20px;font-size:16px;">Close</button>';
+        document.body.appendChild(popup);
+        var closeBtn = document.getElementById('about-close');
+        if (closeBtn) closeBtn.onclick = function() {
+            popup.parentNode.removeChild(popup);
+        };
+    }
+
     function initEngine() {
         try {
             if (typeof Engine === 'undefined') {
@@ -689,6 +707,9 @@
 
             var btnDebug = document.getElementById('btn-debug');
             if (btnDebug) btnDebug.onclick = function() { toggleMenu(); showDebugPopup(); };
+
+            var btnAbout = document.getElementById('btn-about');
+            if (btnAbout) btnAbout.onclick = function() { toggleMenu(); showAboutPopup(); };
 
             var btnMenu = document.getElementById('btn-menu');
             if (btnMenu) btnMenu.onclick = function() { toggleMenu(); backToMenu(); };
