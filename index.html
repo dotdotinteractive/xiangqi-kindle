@@ -13,14 +13,9 @@
 </head>
 <body>
     <div id="game-container">
-        <div id="header">
-            <h1>Xiangqi</h1>
-            <div id="status">Loading...</div>
-            <div id="error-log"></div>
-        </div>
-
         <div id="menu-screen">
             <div class="menu-content">
+                <h1>Xiangqi</h1>
                 <button type="button" class="menu-btn" id="vs-ai-btn">vs AI (Red)</button>
                 <button type="button" class="menu-btn" id="vs-ai-black-btn">vs AI (Black)</button>
                 <button type="button" class="menu-btn" id="two-player-btn">Two Player</button>
@@ -34,16 +29,21 @@
         </div>
 
         <div id="board-screen" class="hidden">
-            <div id="board-wrapper">
+            <div id="status-bar">
+                <span id="status"></span>
+                <span id="menu-toggle" onclick="toggleMenu()">[Menu]</span>
+            </div>
+            <div id="board-area">
                 <div id="xiangqiboard"></div>
             </div>
-            <div id="controls">
-                <button type="button" class="ctrl-btn" id="btn-new">New</button>
-                <button type="button" class="ctrl-btn" id="btn-undo">Undo</button>
-                <button type="button" class="ctrl-btn" id="btn-flip">Flip</button>
-                <button type="button" class="ctrl-btn" id="btn-menu">Menu</button>
+            <div id="game-menu" class="hidden">
+                <button type="button" class="mitem" id="btn-new">New Game</button>
+                <button type="button" class="mitem" id="btn-undo">Undo</button>
+                <button type="button" class="mitem" id="btn-flip">Flip Board</button>
+                <button type="button" class="mitem" id="btn-pgn">Show Moves</button>
+                <button type="button" class="mitem" id="btn-menu">Main Menu</button>
             </div>
-            <div id="move-history-wrap">
+            <div id="move-history-wrap" class="hidden">
                 <textarea id="pgn" readonly rows="3"></textarea>
             </div>
         </div>
@@ -55,6 +55,8 @@
                 <button type="button" class="menu-btn" id="back-menu-btn">Main Menu</button>
             </div>
         </div>
+
+        <div id="error-log"></div>
     </div>
 
     <script type="text/javascript" src="main.js"></script>

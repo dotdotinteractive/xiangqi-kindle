@@ -66,8 +66,6 @@
 
     <kindle:resources>
         <kindle:asset key="AllowHTTPSApplicationManifestCrossDomain" value="true" />
-        <kindle:asset key="ApplicationCachePath" value="/var/local/mesquite/devkit/resource/appcache" />
-        <kindle:asset key="ApplicationCacheLoadDelay" value="6.0" />
         <kindle:asset key="LocalStorageQuota" value="26214400" />
     </kindle:resources>
 
