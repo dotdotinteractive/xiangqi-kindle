@@ -391,9 +391,8 @@
     }
 
     function init() {
+        /* Bind buttons FIRST - before engine init, so UI works even if engine crashes */
         try {
-            initEngine();
-
             var vsAiBtn = document.getElementById('vs-ai-btn');
             if (vsAiBtn) vsAiBtn.onclick = function() { gameMode = 'ai-red'; newGame(); };
 
@@ -434,12 +433,18 @@
             if (backMenu) backMenu.onclick = backToMenu;
 
             setDifficulty(1);
+        } catch (e) {
+            log('init buttons: ' + (e && e.message ? e.message : e));
+        }
 
+        /* Init engine separately - if this fails, buttons still work */
+        try {
+            initEngine();
             if (engine) {
                 drawBoard();
             }
         } catch (e) {
-            log('init: ' + (e && e.message ? e.message : e));
+            log('init engine: ' + (e && e.message ? e.message : e));
         }
     }
 
