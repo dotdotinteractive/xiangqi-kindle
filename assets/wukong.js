@@ -136,17 +136,23 @@ var Engine = function() {
     var sixty = 0;
     
     // almost unnique position identifier
-    hashKey = 0;
+    var hashKey = 0;
     
     // squares occupied by kings
     var kingSquare = [0, 0];
     
     // move stack
     var moveStack = [];
-    
+
     // plies
     var searchPly = 0;
     var gamePly = 0;
+
+    // GUI stats variables (declared to avoid ReferenceError in browser mode)
+    var guiScore = 0;
+    var guiDepth = 0;
+    var guiTime = 0;
+    var guiPv = '';
     
     
     /****************************\
@@ -1105,7 +1111,7 @@ var Engine = function() {
     \****************************/
     
     // 16Mb default hash table size
-    var hashEntries = 838860;    
+    var hashEntries = 100000;
 
     // no hash entry found constant
     const NO_HASH = 100000;
@@ -1618,7 +1624,7 @@ var Engine = function() {
           guiTime = info.split('time ')[1].split(' ')[0];
         }
         
-        if (info.includes('mate') || info.includes('-49000')) break;
+        if (info.indexOf('mate') !== -1 || info.indexOf('-49000') !== -1) break;
       }
 
       let bestMove = (timing.stopped == 1) ? lastBestMove: pvTable[0];

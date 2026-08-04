@@ -94,6 +94,19 @@
         var boardEl = document.getElementById('xiangqiboard');
         var html = '<table cellspacing="0"><tbody>';
 
+        // Pre-compute legal move targets ONCE (not per cell)
+        var legalTargets = {};
+        if (selectedSquare !== null) {
+            var legalMoves = engine.generateLegalMoves();
+            for (var i = 0; i < legalMoves.length; i++) {
+                var mv = legalMoves[i].move;
+                if (engine.getSourceSquare(mv) === selectedSquare) {
+                    var tgt = engine.getTargetSquare(mv);
+                    legalTargets[tgt] = true;
+                }
+            }
+        }
+
         for (var displayRow = 0; displayRow < ROWS; displayRow++) {
             html += '<tr>';
 
@@ -104,7 +117,6 @@
 
                 var sq = squareFromCoord(actualRow, actualFile);
                 var piece = engine.getPiece(sq);
-                var coord = engine.squareToString(sq);
 
                 var classes = [];
                 var cellContent = '';
@@ -133,20 +145,12 @@
                     cellContent = '<span class="piece ' + pieceClass + '">' + pieceChar(piece) + '</span>';
                 }
 
-                // Legal move highlight
-                if (selectedSquare !== null && sq !== selectedSquare) {
-                    var legalMoves = engine.generateLegalMoves();
-                    for (var i = 0; i < legalMoves.length; i++) {
-                        var move = legalMoves[i].move;
-                        if (engine.getSourceSquare(move) === selectedSquare &&
-                            engine.getTargetSquare(move) === sq) {
-                            if (piece > 0) {
-                                classes.push('legal-capture');
-                            } else {
-                                classes.push('legal-move');
-                            }
-                            break;
-                        }
+                // Legal move highlight (using pre-computed map)
+                if (selectedSquare !== null && sq !== selectedSquare && legalTargets[sq]) {
+                    if (piece > 0) {
+                        classes.push('legal-capture');
+                    } else {
+                        classes.push('legal-move');
                     }
                 }
 
@@ -230,12 +234,30 @@
         setTimeout(function() {
             var bestMove = 0;
             try {
+                // Set a time limit so Kindle's slow CPU doesn't hang
+                // Easy=1s, Medium=3s, Hard=8s max
+                var timeLimit = (aiDepth === 1) ? 1000 : (aiDepth === 3) ? 3000 : 8000;
+                engine.resetTimeControl();
+                var tc = engine.getTimeControl();
+                tc.timeSet = 1;
+                tc.time = timeLimit;
+                tc.stopTime = Date.now() + timeLimit;
+                engine.setTimeControl(tc);
+
                 bestMove = engine.search(aiDepth);
             } catch (e) {
-                console.log('AI search error: ' + e);
+                // Ignore errors, try to recover
             }
 
-            if (bestMove === 0) {
+            if (bestMove === 0 || bestMove === undefined) {
+                // Fallback: pick a random legal move
+                var moves = engine.generateLegalMoves();
+                if (moves.length > 0) {
+                    bestMove = moves[Math.floor(Math.random() * moves.length)].move;
+                }
+            }
+
+            if (bestMove === 0 || bestMove === undefined) {
                 aiThinking = false;
                 checkGameOver();
                 return;
